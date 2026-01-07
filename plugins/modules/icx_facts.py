@@ -129,6 +129,7 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.six import iteritems
 from ansible.module_utils.six.moves import zip
 
+import madbg
 
 class FactsBase(object):
 
@@ -149,7 +150,6 @@ class FactsBase(object):
 class Default(FactsBase):
 
     COMMANDS = ['show running-config | include hostname', 'show version', 'show stack']
-
     def populate(self):
         super(Default, self).run(['skip'])
         super(Default, self).populate()
@@ -164,7 +164,7 @@ class Default(FactsBase):
             self.facts['model'] = self.parse_model(data)
             self.facts['image'] = self.parse_image(data)
             self.facts['hostname'] = self.parse_hostname(self.responses[0])
-            self.facts['info'] = 'Unit' + det['Unit'] + ':' + det['model'] + ', ' + self.parse_serialnum(data, det['Unit'])
+            self.facts['info'] = 'Unit' + det['Unit'] + ':' + det['model'] + ', ' + str(self.parse_serialnum(data, det['Unit']))
             self.parse_stacks(data)
 
     def parse_serialnum(self, data, unit):
@@ -288,12 +288,14 @@ class Interfaces(FactsBase):
 
     def populate(self):
         super(Interfaces, self).populate()
+        
 
         self.facts['all_ipv4_addresses'] = list()
         self.facts['all_ipv6_addresses'] = list()
         data = self.responses[1]
         if data:
             interfaces = self.parse_interfaces(data)
+            
             self.facts['interfaces'] = self.populate_interfaces(interfaces)
 
         data = self.responses[1]
@@ -430,15 +432,16 @@ class Interfaces(FactsBase):
         parsed = dict()
         key = ''
         for line in data.split('\n'):
+            match = re.match(r'\s*(?:\d+)?[A-Za-z]+Ethernet\s*(\d+(?:/\d+)+)', line)
             if len(line) == 0:
                 continue
-            elif line[0] == ' ':
+            elif line[0] == ' ' and not match:
                 parsed[key] += '\n%s' % line
             else:
-                match = re.match(r'\S+Ethernet(\S+)', line)
                 if match:
                     key = match.group(1)
                     parsed[key] = line
+        
         return parsed
 
     def parse_description(self, data):
