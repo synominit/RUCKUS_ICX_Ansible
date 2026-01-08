@@ -3,12 +3,15 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
 
 DOCUMENTATION = """
@@ -61,7 +64,7 @@ options:
       default: present
 """
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Test reachability to 10.10.10.10
   community.network.icx_ping:
     dest: 10.10.10.10
@@ -84,9 +87,9 @@ EXAMPLES = r'''
     dest: 10.10.10.10
     ttl: 20
     size: 500
-'''
+"""
 
-RETURN = '''
+RETURN = """
 commands:
   description: Show the command sent.
   returned: always
@@ -112,16 +115,21 @@ rtt:
   returned: always
   type: dict
   sample: {"avg": 2, "max": 8, "min": 1}
-'''
+"""
 
-from ansible.module_utils._text import to_text
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import run_commands
-from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.connection import Connection, ConnectionError
 import re
 
+from ansible.module_utils._text import to_text
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.connection import Connection, ConnectionError
+from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+    run_commands,
+)
 
-def build_ping(dest, count=None, source=None, timeout=None, ttl=None, size=None, vrf=None):
+
+def build_ping(
+    dest, count=None, source=None, timeout=None, ttl=None, size=None, vrf=None
+):
     """
     Function to build the command to send to the terminal for the switch
     to execute. All args come from the module's unique params.
@@ -157,20 +165,29 @@ def parse_ping(ping_stats):
     Returns the percent of packet loss, received packets, transmitted packets, and RTT dict.
     """
     if ping_stats.startswith("Ping self done"):
-        rtt = {'avg': 0, 'max': 0, 'min': 0}
+        rtt = {"avg": 0, "max": 0, "min": 0}
         return 100, 0, 0, rtt
-    elif ping_stats.startswith('Success'):
-        rate_re = re.compile(r"^\w+\s+\w+\s+\w+\s+(?P<pct>\d+)\s+\w+\s+\((?P<rx>\d+)/(?P<tx>\d+)\)")
-        rtt_re = re.compile(r".*,\s+\S+\s+\S+=(?P<min>\d+)/(?P<avg>\d+)/(?P<max>\d+)\s+\w+\.+\s*$|.*\s*$")
+    elif ping_stats.startswith("Success"):
+        rate_re = re.compile(
+            r"^\w+\s+\w+\s+\w+\s+(?P<pct>\d+)\s+\w+\s+\((?P<rx>\d+)/(?P<tx>\d+)\)"
+        )
+        rtt_re = re.compile(
+            r".*,\s+\S+\s+\S+=(?P<min>\d+)/(?P<avg>\d+)/(?P<max>\d+)\s+\w+\.+\s*$|.*\s*$"
+        )
 
         rate = rate_re.match(ping_stats)
         rtt = rtt_re.match(ping_stats)
-        return rate.group("pct"), rate.group("rx"), rate.group("tx"), rtt.groupdict()
+        return (
+            rate.group("pct"),
+            rate.group("rx"),
+            rate.group("tx"),
+            rtt.groupdict(),
+        )
     else:
         rate_re = re.compile(r"^Sending+\s+(?P<tx>\d+),")
         rate = rate_re.match(ping_stats)
-        rtt = {'avg': 0, 'max': 0, 'min': 0}
-        return 0, 0, rate.group('tx'), rtt
+        rtt = {"avg": 0, "max": 0, "min": 0}
+        return 0, 0, rate.group("tx"), rtt
 
 
 def validate_results(module, loss, results):
@@ -185,20 +202,27 @@ def validate_results(module, loss, results):
 
 
 def validate_fail(module, responses):
-    if ("Success" in responses or "No reply" in responses or "Ping self done" in responses) is False:
+    if (
+        "Success" in responses
+        or "No reply" in responses
+        or "Ping self done" in responses
+    ) is False:
         module.fail_json(msg=responses)
 
 
 def validate_parameters(module, timeout, count):
     if timeout and not 1 <= int(timeout) <= 4294967294:
-        module.fail_json(msg="bad value for timeout - valid range (1-4294967294)")
+        module.fail_json(
+            msg="bad value for timeout - valid range (1-4294967294)"
+        )
     if count and not 1 <= int(count) <= 4294967294:
-        module.fail_json(msg="bad value for count - valid range (1-4294967294)")
+        module.fail_json(
+            msg="bad value for count - valid range (1-4294967294)"
+        )
 
 
 def main():
-    """ main entry point for module execution
-    """
+    """main entry point for module execution"""
     argument_spec = dict(
         count=dict(type="int"),
         dest=dict(type="str", required=True),
@@ -206,8 +230,10 @@ def main():
         ttl=dict(type="int"),
         size=dict(type="int"),
         source=dict(type="str"),
-        state=dict(type="str", choices=["absent", "present"], default="present"),
-        vrf=dict(type="str")
+        state=dict(
+            type="str", choices=["absent", "present"], default="present"
+        ),
+        vrf=dict(type="str"),
     )
 
     module = AnsibleModule(argument_spec=argument_spec)
@@ -225,28 +251,30 @@ def main():
     if warnings:
         results["warnings"] = warnings
 
-    response = ''
+    response = ""
     try:
         validate_parameters(module, timeout, count)
-        results["commands"] = [build_ping(dest, count, source, timeout, ttl, size, vrf)]
+        results["commands"] = [
+            build_ping(dest, count, source, timeout, ttl, size, vrf)
+        ]
         ping_results = run_commands(module, commands=results["commands"])
         ping_results_list = ping_results[0].split("\n")
 
     except ConnectionError as exc:
-        module.fail_json(msg=to_text(exc, errors='surrogate_then_replace'))
+        module.fail_json(msg=to_text(exc, errors="surrogate_then_replace"))
 
     validate_fail(module, ping_results[0])
 
     stats = ""
-    statserror = ''
+    statserror = ""
     for line in ping_results_list:
-        if line.startswith('Sending'):
+        if line.startswith("Sending"):
             statserror = line
-        if line.startswith('Success'):
+        if line.startswith("Success"):
             stats = line
-        elif line.startswith('No reply'):
+        elif line.startswith("No reply"):
             stats = statserror
-        elif line.startswith('Ping self done'):
+        elif line.startswith("Ping self done"):
             stats = "Ping self done"
 
     success, rx, tx, rtt = parse_ping(stats)
@@ -267,5 +295,5 @@ def main():
     module.exit_json(**results)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

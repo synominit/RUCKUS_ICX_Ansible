@@ -3,10 +3,11 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: icx_linkagg
 author: "Ruckus Wireless (@Commscope)"
@@ -86,7 +87,7 @@ options:
       - Purge links not defined in the I(aggregate) parameter.
     type: bool
     default: no
-'''
+"""
 
 EXAMPLES = """
 - name: Create static link aggregation group
@@ -137,22 +138,32 @@ from copy import deepcopy
 from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import AnsibleModule, env_fallback
 from ansible.module_utils.connection import ConnectionError, exec_command
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import run_commands, get_config, load_config
-from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.config import CustomNetworkConfig
-from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import remove_default_spec
+from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.config import (
+    CustomNetworkConfig,
+)
+from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import (
+    remove_default_spec,
+)
+from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+    get_config,
+    load_config,
+    run_commands,
+)
 
 
 def range_to_members(ranges, prefix=""):
-    match = re.findall(r'(ethe[a-z]* [0-9]/[0-9]/[0-9]+)( to [0-9]/[0-9]/[0-9]+)?', ranges)
+    match = re.findall(
+        r"(ethe[a-z]* [0-9]/[0-9]/[0-9]+)( to [0-9]/[0-9]/[0-9]+)?", ranges
+    )
     members = list()
     for m in match:
         start, end = m
-        if(end == ''):
+        if end == "":
             start = start.replace("ethe ", "ethernet ")
             members.append("%s%s" % (prefix, start))
         else:
-            start_tmp = re.search(r'[0-9]/[0-9]/([0-9]+)', start)
-            end_tmp = re.search(r'[0-9]/[0-9]/([0-9]+)', end)
+            start_tmp = re.search(r"[0-9]/[0-9]/([0-9]+)", start)
+            end_tmp = re.search(r"[0-9]/[0-9]/([0-9]+)", end)
             start = int(start_tmp.group(1))
             end = int(end_tmp.group(1)) + 1
             for num in range(start, end):
@@ -165,22 +176,22 @@ def map_config_to_obj(module):
     # compare = module.params['check_running_config']
     config = get_config(module, None)
     obj = None
-    for line in config.split('\n'):
+    for line in config.split("\n"):
         l = line.strip()
-        match1 = re.search(r'lag (\S+) (\S+) id (\S+)', l, re.M)
+        match1 = re.search(r"lag (\S+) (\S+) id (\S+)", l, re.M)
         if match1:
             obj = dict()
-            obj['name'] = match1.group(1)
-            obj['mode'] = match1.group(2)
-            obj['group'] = match1.group(3)
-            obj['state'] = 'present'
-            obj['members'] = list()
+            obj["name"] = match1.group(1)
+            obj["mode"] = match1.group(2)
+            obj["group"] = match1.group(3)
+            obj["state"] = "present"
+            obj["members"] = list()
         else:
-            match2 = re.search(r'ports .*', l, re.M)
+            match2 = re.search(r"ports .*", l, re.M)
             if match2 and obj is not None:
-                obj['members'].extend(range_to_members(match2.group(0)))
+                obj["members"].extend(range_to_members(match2.group(0)))
             elif obj is not None:
-                objs[obj['group']] = obj
+                objs[obj["group"]] = obj
                 obj = None
     return objs
 
@@ -188,30 +199,32 @@ def map_config_to_obj(module):
 def map_params_to_obj(module):
     obj = []
 
-    aggregate = module.params.get('aggregate')
+    aggregate = module.params.get("aggregate")
     if aggregate:
         for item in aggregate:
             for key in item:
                 if item.get(key) is None:
                     item[key] = module.params[key]
             d = item.copy()
-            d['group'] = str(d['group'])
+            d["group"] = str(d["group"])
             obj.append(d)
     else:
-        obj.append({
-            'group': str(module.params['group']),
-            'mode': module.params['mode'],
-            'members': module.params['members'],
-            'state': module.params['state'],
-            'name': module.params['name']
-        })
+        obj.append(
+            {
+                "group": str(module.params["group"]),
+                "mode": module.params["mode"],
+                "members": module.params["members"],
+                "state": module.params["state"],
+                "name": module.params["name"],
+            }
+        )
 
     return obj
 
 
 def search_obj_in_list(group, lst):
     for o in lst:
-        if o['group'] == group:
+        if o["group"] == group:
             return o
     return None
 
@@ -227,82 +240,119 @@ def is_member(member, lst):
 def map_obj_to_commands(updates, module):
     commands = list()
     want, have = updates
-    purge = module.params['purge']
+    purge = module.params["purge"]
 
     for w in want:
-        if have == {} and w['state'] == 'absent':
-            commands.append("%slag %s %s id %s" % ('no ' if w['state'] == 'absent' else '', w['name'], w['mode'], w['group']))
-        elif have.get(w['group']) is None:
-            commands.append("%slag %s %s id %s" % ('no ' if w['state'] == 'absent' else '', w['name'], w['mode'], w['group']))
-            if(w.get('members') is not None and w['state'] == 'present'):
-                for m in w['members']:
+        if have == {} and w["state"] == "absent":
+            commands.append(
+                "%slag %s %s id %s"
+                % (
+                    "no " if w["state"] == "absent" else "",
+                    w["name"],
+                    w["mode"],
+                    w["group"],
+                )
+            )
+        elif have.get(w["group"]) is None:
+            commands.append(
+                "%slag %s %s id %s"
+                % (
+                    "no " if w["state"] == "absent" else "",
+                    w["name"],
+                    w["mode"],
+                    w["group"],
+                )
+            )
+            if w.get("members") is not None and w["state"] == "present":
+                for m in w["members"]:
                     commands.append("ports %s" % (m))
-            if w['state'] == 'present':
+            if w["state"] == "present":
                 commands.append("exit")
         else:
-            commands.append("%slag %s %s id %s" % ('no ' if w['state'] == 'absent' else '', w['name'], w['mode'], w['group']))
-            if(w.get('members') is not None and w['state'] == 'present'):
-                for m in have[w['group']]['members']:
-                    if not is_member(m, w['members']):
+            commands.append(
+                "%slag %s %s id %s"
+                % (
+                    "no " if w["state"] == "absent" else "",
+                    w["name"],
+                    w["mode"],
+                    w["group"],
+                )
+            )
+            if w.get("members") is not None and w["state"] == "present":
+                for m in have[w["group"]]["members"]:
+                    if not is_member(m, w["members"]):
                         commands.append("no ports %s" % (m))
-                for m in w['members']:
+                for m in w["members"]:
                     sm = range_to_members(ranges=m)
                     for smm in sm:
-                        if smm not in have[w['group']]['members']:
+                        if smm not in have[w["group"]]["members"]:
                             commands.append("ports %s" % (smm))
 
-            if w['state'] == 'present':
+            if w["state"] == "present":
                 commands.append("exit")
     if purge:
-        if module.params['check_running_config'] is False:
+        if module.params["check_running_config"] is False:
             have = map_config_to_obj(module)
         for h in have:
-            if search_obj_in_list(have[h]['group'], want) is None:
-                commands.append("no lag %s %s id %s" % (have[h]['name'], have[h]['mode'], have[h]['group']))
+            if search_obj_in_list(have[h]["group"], want) is None:
+                commands.append(
+                    "no lag %s %s id %s"
+                    % (have[h]["name"], have[h]["mode"], have[h]["group"])
+                )
     return commands
 
 
 def main():
     element_spec = dict(
-        group=dict(type='int'),
-        name=dict(type='str'),
-        mode=dict(choices=['dynamic', 'static']),
-        members=dict(type='list'),
-        state=dict(default='present',
-                   choices=['present', 'absent']),
-        check_running_config=dict(default=False, type='bool', fallback=(env_fallback, ['ANSIBLE_CHECK_ICX_RUNNING_CONFIG']))
+        group=dict(type="int"),
+        name=dict(type="str"),
+        mode=dict(choices=["dynamic", "static"]),
+        members=dict(type="list"),
+        state=dict(default="present", choices=["present", "absent"]),
+        check_running_config=dict(
+            default=False,
+            type="bool",
+            fallback=(env_fallback, ["ANSIBLE_CHECK_ICX_RUNNING_CONFIG"]),
+        ),
     )
 
     aggregate_spec = deepcopy(element_spec)
-    aggregate_spec['group'] = dict(required=True, type='int')
+    aggregate_spec["group"] = dict(required=True, type="int")
 
-    required_one_of = [['group', 'aggregate']]
-    required_together = [['name', 'group']]
-    mutually_exclusive = [['group', 'aggregate']]
+    required_one_of = [["group", "aggregate"]]
+    required_together = [["name", "group"]]
+    mutually_exclusive = [["group", "aggregate"]]
 
     remove_default_spec(aggregate_spec)
 
     argument_spec = dict(
-        aggregate=dict(type='list', elements='dict', options=aggregate_spec, required_together=required_together),
-        purge=dict(default=False, type='bool')
+        aggregate=dict(
+            type="list",
+            elements="dict",
+            options=aggregate_spec,
+            required_together=required_together,
+        ),
+        purge=dict(default=False, type="bool"),
     )
 
     argument_spec.update(element_spec)
 
-    module = AnsibleModule(argument_spec=argument_spec,
-                           required_one_of=required_one_of,
-                           required_together=required_together,
-                           mutually_exclusive=mutually_exclusive,
-                           supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec,
+        required_one_of=required_one_of,
+        required_together=required_together,
+        mutually_exclusive=mutually_exclusive,
+        supports_check_mode=True,
+    )
 
     warnings = list()
-    result = {'changed': False}
+    result = {"changed": False}
     if warnings:
-        result['warnings'] = warnings
+        result["warnings"] = warnings
 
     want = map_params_to_obj(module)
 
-    if module.params['check_running_config'] is False:
+    if module.params["check_running_config"] is False:
         have = {}
     else:
         have = map_config_to_obj(module)
@@ -314,10 +364,10 @@ def main():
     if commands:
         if not module.check_mode:
             load_config(module, commands)
-        result['changed'] = True
+        result["changed"] = True
 
     module.exit_json(**result)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

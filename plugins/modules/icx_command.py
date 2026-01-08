@@ -3,6 +3,7 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
@@ -134,58 +135,68 @@ failed_conditions:
 
 import re
 import time
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import run_commands
+
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import ComplexList, to_lines
-from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.parsing import Conditional
 from ansible.module_utils.six import string_types
+from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.parsing import (
+    Conditional,
+)
+from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import (
+    ComplexList,
+    to_lines,
+)
+from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+    run_commands,
+)
 
 
 def parse_commands(module, warnings):
-    command = ComplexList(dict(
-        command=dict(key=True),
-        prompt=dict(),
-        answer=dict(),
-        check_all=dict(type='bool', default='False'),
-        newline=dict(type='bool', default='True')
-    ), module)
-    commands = command(module.params['commands'])
+    command = ComplexList(
+        dict(
+            command=dict(key=True),
+            prompt=dict(),
+            answer=dict(),
+            check_all=dict(type="bool", default="False"),
+            newline=dict(type="bool", default="True"),
+        ),
+        module,
+    )
+    commands = command(module.params["commands"])
     for item in list(commands):
         if module.check_mode:
-            if not item['command'].startswith('show'):
+            if not item["command"].startswith("show"):
                 warnings.append(
-                    'Only show commands are supported when using check mode, not executing configure terminal')
+                    "Only show commands are supported when using check mode, not executing configure terminal"
+                )
                 commands.remove(item)
     return commands
 
 
 def main():
-    """main entry point for module execution
-    """
+    """main entry point for module execution"""
     argument_spec = dict(
-        commands=dict(type='list', required=True),
-
-        wait_for=dict(type='list', aliases=['waitfor']),
-        match=dict(default='all', choices=['all', 'any']),
-
-        retries=dict(default=10, type='int'),
-        interval=dict(default=1, type='int')
+        commands=dict(type="list", required=True),
+        wait_for=dict(type="list", aliases=["waitfor"]),
+        match=dict(default="all", choices=["all", "any"]),
+        retries=dict(default=10, type="int"),
+        interval=dict(default=1, type="int"),
     )
 
-    module = AnsibleModule(argument_spec=argument_spec,
-                           supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
+    )
 
-    result = {'changed': False}
+    result = {"changed": False}
 
     warnings = list()
     commands = parse_commands(module, warnings)
-    result['warnings'] = warnings
+    result["warnings"] = warnings
 
-    wait_for = module.params['wait_for'] or list()
+    wait_for = module.params["wait_for"] or list()
     conditionals = [Conditional(c) for c in wait_for]
-    retries = module.params['retries']
-    interval = module.params['interval']
-    match = module.params['match']
+    retries = module.params["retries"]
+    interval = module.params["interval"]
+    match = module.params["match"]
 
     while retries > 0:
 
@@ -194,7 +205,7 @@ def main():
         for item in list(conditionals):
 
             if item(responses):
-                if match == 'any':
+                if match == "any":
                     conditionals = list()
                     break
                 conditionals.remove(item)
@@ -207,17 +218,19 @@ def main():
 
     if conditionals:
         failed_conditions = [item.raw for item in conditionals]
-        msg = 'One or more conditional statements have not been satisfied'
+        msg = "One or more conditional statements have not been satisfied"
         module.fail_json(msg=msg, failed_conditions=failed_conditions)
 
-    result.update({
-        'changed': False,
-        'stdout': responses,
-        'stdout_lines': list(to_lines(responses))
-    })
+    result.update(
+        {
+            "changed": False,
+            "stdout": responses,
+            "stdout_lines": list(to_lines(responses)),
+        }
+    )
 
     module.exit_json(**result)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

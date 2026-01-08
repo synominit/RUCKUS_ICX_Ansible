@@ -1,14 +1,16 @@
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 import json
 
-from ansible_collections.commscope.icx.tests.unit.compat import unittest
-from ansible_collections.commscope.icx.tests.unit.compat.mock import patch
 from ansible.module_utils import basic
 from ansible.module_utils.common.text.converters import to_bytes
+from ansible_collections.commscope.icx.tests.unit.compat import unittest
+from ansible_collections.commscope.icx.tests.unit.compat.mock import patch
 
 cur_context = None
+
 
 def set_module_args(args):
     global cur_context
@@ -48,22 +50,24 @@ class AnsibleFailJson(Exception):
 
 
 def exit_json(*args, **kwargs):
-    if 'changed' not in kwargs:
-        kwargs['changed'] = False
+    if "changed" not in kwargs:
+        kwargs["changed"] = False
     raise AnsibleExitJson(kwargs)
 
 
 def fail_json(*args, **kwargs):
-    kwargs['failed'] = True
+    kwargs["failed"] = True
     raise AnsibleFailJson(kwargs)
 
 
 class ModuleTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.mock_module = patch.multiple(basic.AnsibleModule, exit_json=exit_json, fail_json=fail_json)
+        self.mock_module = patch.multiple(
+            basic.AnsibleModule, exit_json=exit_json, fail_json=fail_json
+        )
         self.mock_module.start()
-        self.mock_sleep = patch('time.sleep')
+        self.mock_sleep = patch("time.sleep")
         self.mock_sleep.start()
         set_module_args({})
         self.addCleanup(self.mock_module.stop)

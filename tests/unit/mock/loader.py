@@ -16,14 +16,15 @@
 # along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
 
 # Make coding more python3-ish
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 import os
 
 from ansible.errors import AnsibleParserError
-from ansible.parsing.dataloader import DataLoader
 from ansible.module_utils._text import to_bytes, to_text
+from ansible.parsing.dataloader import DataLoader
 
 
 class DictDataLoader(DataLoader):
@@ -68,7 +69,7 @@ class DictDataLoader(DataLoader):
     def list_directory(self, path):
         ret = []
         path = to_text(path)
-        for x in (list(self._file_mapping.keys()) + self._known_directories):
+        for x in list(self._file_mapping.keys()) + self._known_directories:
             if x.startswith(path):
                 if os.path.dirname(x) == path:
                     ret.append(os.path.basename(x))
@@ -86,7 +87,7 @@ class DictDataLoader(DataLoader):
         self._known_directories = []
         for path in self._file_mapping:
             dirname = os.path.dirname(path)
-            while dirname not in ('/', ''):
+            while dirname not in ("/", ""):
                 self._add_known_directory(dirname)
                 dirname = os.path.dirname(dirname)
 

@@ -3,6 +3,7 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
@@ -222,270 +223,447 @@ EXAMPLES = """
 """
 from ansible.module_utils.basic import AnsibleModule, env_fallback
 from ansible.module_utils.connection import ConnectionError, exec_command
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import load_config
+from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+    load_config,
+)
 
 
-def build_command(module, acl_name=None, accounting=None, rules=None, state=None):
+def build_command(
+    module, acl_name=None, accounting=None, rules=None, state=None
+):
 
     acl_cmds = []
     rules_acl_cmds = []
 
-    if state == 'absent':
+    if state == "absent":
         cmd = "no ipv6 access-list {0}".format(acl_name)
     else:
         cmd = "ipv6 access-list {0}".format(acl_name)
     acl_cmds.append(cmd)
 
-    if accounting == 'disable':
+    if accounting == "disable":
         cmd = "no enable accounting"
         acl_cmds.append(cmd)
-    elif accounting == 'enable':
+    elif accounting == "enable":
         cmd = "enable accounting"
         acl_cmds.append(cmd)
 
     if rules is not None:
         for rule in rules:
-            if rule['remark'] is not None:
-                if rule['remark']['state'] == 'absent':
-                    cmd = "no remark {0}".format(rule['remark']['comment_text'])
+            if rule["remark"] is not None:
+                if rule["remark"]["state"] == "absent":
+                    cmd = "no remark {0}".format(
+                        rule["remark"]["comment_text"]
+                    )
                 else:
-                    cmd = "remark {0}".format(rule['remark']['comment_text'])
+                    cmd = "remark {0}".format(rule["remark"]["comment_text"])
                 rules_acl_cmds.append(cmd)
             cmd = ""
-            if rule['state'] == 'absent':
+            if rule["state"] == "absent":
                 cmd += "no "
-            if rule['seq_num'] is not None:
-                cmd += "sequence {0} ".format(rule['seq_num'])
-            if rule['rule_type'] is not None:
-                cmd += "{0}".format(rule['rule_type'])
+            if rule["seq_num"] is not None:
+                cmd += "sequence {0} ".format(rule["seq_num"])
+            if rule["rule_type"] is not None:
+                cmd += "{0}".format(rule["rule_type"])
 
-            if rule['ip_protocol_name'] is not None:
-                cmd += " {0}".format(rule['ip_protocol_name'])
-            elif rule['ip_protocol_num'] is not None:
-                cmd += " {0}".format(rule['ip_protocol_num'])
-            if rule['source']['host_ipv6_address'] is not None:
-                cmd += " host {0}".format(rule['source']['host_ipv6_address'])
-            elif rule['source']['ipv6_prefix_prefix_length'] is not None:
-                cmd += " {0}".format(rule['source']['ipv6_prefix_prefix_length'])
-            elif rule['source']['any']:
+            if rule["ip_protocol_name"] is not None:
+                cmd += " {0}".format(rule["ip_protocol_name"])
+            elif rule["ip_protocol_num"] is not None:
+                cmd += " {0}".format(rule["ip_protocol_num"])
+            if rule["source"]["host_ipv6_address"] is not None:
+                cmd += " host {0}".format(rule["source"]["host_ipv6_address"])
+            elif rule["source"]["ipv6_prefix_prefix_length"] is not None:
+                cmd += " {0}".format(
+                    rule["source"]["ipv6_prefix_prefix_length"]
+                )
+            elif rule["source"]["any"]:
                 cmd += " any"
-            if rule['ip_protocol_name'] == "icmp":
-                if rule['destination']['host_ipv6_address'] is not None:
-                    cmd += " host {0}".format(rule['destination']['host_ipv6_address'])
-                elif rule['destination']['ipv6_prefix_prefix_length'] is not None:
-                    cmd += " {0}".format(rule['destination']['ipv6_prefix_prefix_length'])
-                elif rule['destination']['any']:
+            if rule["ip_protocol_name"] == "icmp":
+                if rule["destination"]["host_ipv6_address"] is not None:
+                    cmd += " host {0}".format(
+                        rule["destination"]["host_ipv6_address"]
+                    )
+                elif (
+                    rule["destination"]["ipv6_prefix_prefix_length"]
+                    is not None
+                ):
+                    cmd += " {0}".format(
+                        rule["destination"]["ipv6_prefix_prefix_length"]
+                    )
+                elif rule["destination"]["any"]:
                     cmd += " any"
-                if rule['icmp_num'] is not None:
-                    cmd += " {0}".format(rule['icmp_num'])
-                    if rule['icmp_code'] is not None:
-                        cmd += " {0}".format(rule['icmp_code'])
-                elif rule['icmp_type'] is not None:
-                    cmd += " {0}".format(rule['icmp_type'])
+                if rule["icmp_num"] is not None:
+                    cmd += " {0}".format(rule["icmp_num"])
+                    if rule["icmp_code"] is not None:
+                        cmd += " {0}".format(rule["icmp_code"])
+                elif rule["icmp_type"] is not None:
+                    cmd += " {0}".format(rule["icmp_type"])
 
-                if rule['dscp_matching'] is not None:
-                    cmd += " dscp-matching {0}".format(rule['dscp_matching'])
-                    if rule['dscp_marking'] is not None:
-                        cmd += " dscp-marking {0}".format(rule['dscp_marking'])
-                    elif rule['log']:
+                if rule["dscp_matching"] is not None:
+                    cmd += " dscp-matching {0}".format(rule["dscp_matching"])
+                    if rule["dscp_marking"] is not None:
+                        cmd += " dscp-marking {0}".format(rule["dscp_marking"])
+                    elif rule["log"]:
                         cmd += " log"
-                elif rule['dscp_marking'] is not None:
-                    cmd += " dscp-marking {0}".format(rule['dscp_marking'])
+                elif rule["dscp_marking"] is not None:
+                    cmd += " dscp-marking {0}".format(rule["dscp_marking"])
 
-                elif rule['traffic_policy_name'] is not None:
-                    if (rule['icmp_num'] is None) or (rule['icmp_type'] is None):
-                        cmd += " traffic-policy {0}".format(rule['traffic_policy_name'])
-                        if rule['log']:
+                elif rule["traffic_policy_name"] is not None:
+                    if (rule["icmp_num"] is None) or (
+                        rule["icmp_type"] is None
+                    ):
+                        cmd += " traffic-policy {0}".format(
+                            rule["traffic_policy_name"]
+                        )
+                        if rule["log"]:
                             cmd += " log"
-                        elif rule['mirror']:
+                        elif rule["mirror"]:
                             cmd += " mirror"
                 else:
-                    if rule['log']:
+                    if rule["log"]:
                         cmd += " log"
-                    if rule['mirror']:
+                    if rule["mirror"]:
                         cmd += " mirror"
 
-            elif rule['ip_protocol_name'] == "ipv6":
-                if rule['destination']['host_ipv6_address'] is not None:
-                    cmd += " host {0}".format(rule['destination']['host_ipv6_address'])
-                elif rule['destination']['ipv6_prefix_prefix_length'] is not None:
-                    cmd += " {0}".format(rule['destination']['ipv6_prefix_prefix_length'])
-                elif rule['destination']['any']:
+            elif rule["ip_protocol_name"] == "ipv6":
+                if rule["destination"]["host_ipv6_address"] is not None:
+                    cmd += " host {0}".format(
+                        rule["destination"]["host_ipv6_address"]
+                    )
+                elif (
+                    rule["destination"]["ipv6_prefix_prefix_length"]
+                    is not None
+                ):
+                    cmd += " {0}".format(
+                        rule["destination"]["ipv6_prefix_prefix_length"]
+                    )
+                elif rule["destination"]["any"]:
                     cmd += " any"
-                if rule['fragments']:
+                if rule["fragments"]:
                     cmd += " fragments"
-                elif rule['routing']:
+                elif rule["routing"]:
                     cmd += " routing"
-                if rule['dscp_matching'] is not None:
-                    cmd += " dscp-matching {0}".format(rule['dscp_matching'])
-                if rule['priority_matching'] is not None:
-                    cmd += " 802.1p-priority-matching {0}".format(rule['priority_matching'])
-                if rule['dscp_marking'] is not None:
-                    cmd += " dscp-marking {0}".format(rule['dscp_marking'])
-                    if rule['priority_marking'] is not None:
-                        cmd += " 802.1p-priority-marking {0}".format(rule['priority_marking'])
-                        if rule['internal_priority_marking'] is not None:
-                            cmd += " internal-priority-marking {0}".format(rule['internal_priority_marking'])
-                            if rule['log']:
+                if rule["dscp_matching"] is not None:
+                    cmd += " dscp-matching {0}".format(rule["dscp_matching"])
+                if rule["priority_matching"] is not None:
+                    cmd += " 802.1p-priority-matching {0}".format(
+                        rule["priority_matching"]
+                    )
+                if rule["dscp_marking"] is not None:
+                    cmd += " dscp-marking {0}".format(rule["dscp_marking"])
+                    if rule["priority_marking"] is not None:
+                        cmd += " 802.1p-priority-marking {0}".format(
+                            rule["priority_marking"]
+                        )
+                        if rule["internal_priority_marking"] is not None:
+                            cmd += " internal-priority-marking {0}".format(
+                                rule["internal_priority_marking"]
+                            )
+                            if rule["log"]:
                                 cmd += " log"
-                            if rule['mirror']:
+                            if rule["mirror"]:
                                 cmd += " mirror"
-                elif rule['priority_marking'] is not None:
-                    cmd += " 802.1p-priority-marking {0}".format(rule['priority_marking'])
-                    if rule['internal_priority_marking'] is not None:
-                        cmd += " internal-priority-marking {0}".format(rule['internal_priority_marking'])
-                        if rule['log']:
+                elif rule["priority_marking"] is not None:
+                    cmd += " 802.1p-priority-marking {0}".format(
+                        rule["priority_marking"]
+                    )
+                    if rule["internal_priority_marking"] is not None:
+                        cmd += " internal-priority-marking {0}".format(
+                            rule["internal_priority_marking"]
+                        )
+                        if rule["log"]:
                             cmd += " log"
-                        if rule['mirror']:
+                        if rule["mirror"]:
                             cmd += " mirror"
-                elif rule['internal_priority_marking'] is not None:
-                    if rule['fragments'] is False:
-                        cmd += " internal-priority-marking {0}".format(rule['internal_priority_marking'])
-                        if rule['log']:
+                elif rule["internal_priority_marking"] is not None:
+                    if rule["fragments"] is False:
+                        cmd += " internal-priority-marking {0}".format(
+                            rule["internal_priority_marking"]
+                        )
+                        if rule["log"]:
                             cmd += " log"
-                        if rule['mirror']:
+                        if rule["mirror"]:
                             cmd += " mirror"
-                elif rule['traffic_policy_name'] is not None:
-                    cmd += " traffic-policy {0}".format(rule['traffic_policy_name'])
-                    if rule['log']:
+                elif rule["traffic_policy_name"] is not None:
+                    cmd += " traffic-policy {0}".format(
+                        rule["traffic_policy_name"]
+                    )
+                    if rule["log"]:
                         cmd += " log"
-                    elif rule['mirror']:
+                    elif rule["mirror"]:
                         cmd += " mirror"
                 else:
-                    if rule['log']:
+                    if rule["log"]:
                         cmd += " log"
-                    if rule['mirror']:
+                    if rule["mirror"]:
                         cmd += " mirror"
 
-            elif (rule['ip_protocol_name'] == "tcp") or (rule['ip_protocol_name'] == "udp"):
-                if rule['source_comparison_operators'] is not None:
-                    if rule['source_comparison_operators']['operator'] is not None:
-                        if rule['source_comparison_operators']['port_num'] is not None:
-                            cmd += " {0} {1}".format(rule['source_comparison_operators']['operator'], rule['source_comparison_operators']['port_num'])
-                        elif rule['source_comparison_operators']['port_name'] is not None:
-                            cmd += " {0} {1}".format(rule['source_comparison_operators']['operator'], rule['source_comparison_operators']['port_name'])
-                        if rule['source_comparison_operators']['operator'] == 'range':
-                            if rule['source_comparison_operators']['high_port_num'] is not None:
-                                cmd += " {0}".format(rule['source_comparison_operators']['high_port_num'])
-                            elif rule['source_comparison_operators']['high_port_name'] is not None:
-                                cmd += " {0}".format(rule['source_comparison_operators']['high_port_name'])
-                if rule['destination']['host_ipv6_address'] is not None:
-                    cmd += " host {0}".format(rule['destination']['host_ipv6_address'])
-                elif rule['destination']['ipv6_prefix_prefix_length'] is not None:
-                    cmd += " {0}".format(rule['destination']['ipv6_prefix_prefix_length'])
-                elif rule['destination']['any']:
+            elif (rule["ip_protocol_name"] == "tcp") or (
+                rule["ip_protocol_name"] == "udp"
+            ):
+                if rule["source_comparison_operators"] is not None:
+                    if (
+                        rule["source_comparison_operators"]["operator"]
+                        is not None
+                    ):
+                        if (
+                            rule["source_comparison_operators"]["port_num"]
+                            is not None
+                        ):
+                            cmd += " {0} {1}".format(
+                                rule["source_comparison_operators"][
+                                    "operator"
+                                ],
+                                rule["source_comparison_operators"][
+                                    "port_num"
+                                ],
+                            )
+                        elif (
+                            rule["source_comparison_operators"]["port_name"]
+                            is not None
+                        ):
+                            cmd += " {0} {1}".format(
+                                rule["source_comparison_operators"][
+                                    "operator"
+                                ],
+                                rule["source_comparison_operators"][
+                                    "port_name"
+                                ],
+                            )
+                        if (
+                            rule["source_comparison_operators"]["operator"]
+                            == "range"
+                        ):
+                            if (
+                                rule["source_comparison_operators"][
+                                    "high_port_num"
+                                ]
+                                is not None
+                            ):
+                                cmd += " {0}".format(
+                                    rule["source_comparison_operators"][
+                                        "high_port_num"
+                                    ]
+                                )
+                            elif (
+                                rule["source_comparison_operators"][
+                                    "high_port_name"
+                                ]
+                                is not None
+                            ):
+                                cmd += " {0}".format(
+                                    rule["source_comparison_operators"][
+                                        "high_port_name"
+                                    ]
+                                )
+                if rule["destination"]["host_ipv6_address"] is not None:
+                    cmd += " host {0}".format(
+                        rule["destination"]["host_ipv6_address"]
+                    )
+                elif (
+                    rule["destination"]["ipv6_prefix_prefix_length"]
+                    is not None
+                ):
+                    cmd += " {0}".format(
+                        rule["destination"]["ipv6_prefix_prefix_length"]
+                    )
+                elif rule["destination"]["any"]:
                     cmd += " any"
-                if rule['destination_comparison_operators'] is not None:
-                    if rule['destination_comparison_operators']['operator'] is not None:
-                        if rule['destination_comparison_operators']['port_num'] is not None:
-                            cmd += " {0} {1}".format(rule['destination_comparison_operators']['operator'], rule['destination_comparison_operators']['port_num'])
-                        elif rule['destination_comparison_operators']['port_name'] is not None:
-                            cmd += " {0} {1}".format(rule['destination_comparison_operators']['operator'],
-                                                     rule['destination_comparison_operators']['port_name'])
-                        if rule['destination_comparison_operators']['operator'] == 'range':
-                            if rule['destination_comparison_operators']['high_port_num'] is not None:
-                                cmd += " {0}".format(rule['destination_comparison_operators']['high_port_num'])
-                            elif rule['destination_comparison_operators']['high_port_name'] is not None:
-                                cmd += " {0}".format(rule['destination_comparison_operators']['high_port_name'])
-                if rule['ip_protocol_name'] == "tcp":
-                    if rule['established']:
+                if rule["destination_comparison_operators"] is not None:
+                    if (
+                        rule["destination_comparison_operators"]["operator"]
+                        is not None
+                    ):
+                        if (
+                            rule["destination_comparison_operators"][
+                                "port_num"
+                            ]
+                            is not None
+                        ):
+                            cmd += " {0} {1}".format(
+                                rule["destination_comparison_operators"][
+                                    "operator"
+                                ],
+                                rule["destination_comparison_operators"][
+                                    "port_num"
+                                ],
+                            )
+                        elif (
+                            rule["destination_comparison_operators"][
+                                "port_name"
+                            ]
+                            is not None
+                        ):
+                            cmd += " {0} {1}".format(
+                                rule["destination_comparison_operators"][
+                                    "operator"
+                                ],
+                                rule["destination_comparison_operators"][
+                                    "port_name"
+                                ],
+                            )
+                        if (
+                            rule["destination_comparison_operators"][
+                                "operator"
+                            ]
+                            == "range"
+                        ):
+                            if (
+                                rule["destination_comparison_operators"][
+                                    "high_port_num"
+                                ]
+                                is not None
+                            ):
+                                cmd += " {0}".format(
+                                    rule["destination_comparison_operators"][
+                                        "high_port_num"
+                                    ]
+                                )
+                            elif (
+                                rule["destination_comparison_operators"][
+                                    "high_port_name"
+                                ]
+                                is not None
+                            ):
+                                cmd += " {0}".format(
+                                    rule["destination_comparison_operators"][
+                                        "high_port_name"
+                                    ]
+                                )
+                if rule["ip_protocol_name"] == "tcp":
+                    if rule["established"]:
                         cmd += " established"
-                if rule['dscp_matching'] is not None:
-                    cmd += " dscp-matching {0}".format(rule['dscp_matching'])
-                if rule['priority_matching'] is not None:
-                    cmd += " 802.1p-priority-matching {0}".format(rule['priority_matching'])
+                if rule["dscp_matching"] is not None:
+                    cmd += " dscp-matching {0}".format(rule["dscp_matching"])
+                if rule["priority_matching"] is not None:
+                    cmd += " 802.1p-priority-matching {0}".format(
+                        rule["priority_matching"]
+                    )
                     # fragments or routing option applicable only after 802.1p-priority-matching
-                    if rule['fragments']:
+                    if rule["fragments"]:
                         cmd += " fragments"
-                    elif rule['routing']:
+                    elif rule["routing"]:
                         cmd += " routing"
-                if rule['dscp_marking'] is not None:
-                    cmd += " dscp-marking {0}".format(rule['dscp_marking'])
-                    if rule['priority_marking'] is not None:
-                        cmd += " 802.1p-priority-marking {0}".format(rule['priority_marking'])
-                        if rule['internal_priority_marking'] is not None:
-                            cmd += " internal-priority-marking {0}".format(rule['internal_priority_marking'])
-                            if rule['log']:
+                if rule["dscp_marking"] is not None:
+                    cmd += " dscp-marking {0}".format(rule["dscp_marking"])
+                    if rule["priority_marking"] is not None:
+                        cmd += " 802.1p-priority-marking {0}".format(
+                            rule["priority_marking"]
+                        )
+                        if rule["internal_priority_marking"] is not None:
+                            cmd += " internal-priority-marking {0}".format(
+                                rule["internal_priority_marking"]
+                            )
+                            if rule["log"]:
                                 cmd += " log"
-                            if rule['mirror']:
+                            if rule["mirror"]:
                                 cmd += " mirror"
-                elif rule['priority_marking'] is not None:
-                    cmd += " 802.1p-priority-marking {0}".format(rule['priority_marking'])
-                    if rule['internal_priority_marking'] is not None:
-                        cmd += " internal-priority-marking {0}".format(rule['internal_priority_marking'])
-                        if rule['log']:
+                elif rule["priority_marking"] is not None:
+                    cmd += " 802.1p-priority-marking {0}".format(
+                        rule["priority_marking"]
+                    )
+                    if rule["internal_priority_marking"] is not None:
+                        cmd += " internal-priority-marking {0}".format(
+                            rule["internal_priority_marking"]
+                        )
+                        if rule["log"]:
                             cmd += " log"
-                        if rule['mirror']:
+                        if rule["mirror"]:
                             cmd += " mirror"
-                elif rule['internal_priority_marking'] is not None:
-                    if rule['fragments'] is False:
-                        cmd += " internal-priority-marking {0}".format(rule['internal_priority_marking'])
-                        if rule['log']:
+                elif rule["internal_priority_marking"] is not None:
+                    if rule["fragments"] is False:
+                        cmd += " internal-priority-marking {0}".format(
+                            rule["internal_priority_marking"]
+                        )
+                        if rule["log"]:
                             cmd += " log"
-                        if rule['mirror']:
+                        if rule["mirror"]:
                             cmd += " mirror"
-                elif rule['traffic_policy_name'] is not None:
-                    cmd += " traffic-policy {0}".format(rule['traffic_policy_name'])
-                    if rule['log']:
+                elif rule["traffic_policy_name"] is not None:
+                    cmd += " traffic-policy {0}".format(
+                        rule["traffic_policy_name"]
+                    )
+                    if rule["log"]:
                         cmd += " log"
-                    elif rule['mirror']:
+                    elif rule["mirror"]:
                         cmd += " mirror"
                 else:
-                    if rule['log']:
+                    if rule["log"]:
                         cmd += " log"
-                    if rule['mirror']:
+                    if rule["mirror"]:
                         cmd += " mirror"
 
             else:
-                if rule['destination']['host_ipv6_address'] is not None:
-                    cmd += " host {0}".format(rule['destination']['host_ipv6_address'])
-                elif rule['destination']['ipv6_prefix_prefix_length'] is not None:
-                    cmd += " {0}".format(rule['destination']['ipv6_prefix_prefix_length'])
-                elif rule['destination']['any']:
+                if rule["destination"]["host_ipv6_address"] is not None:
+                    cmd += " host {0}".format(
+                        rule["destination"]["host_ipv6_address"]
+                    )
+                elif (
+                    rule["destination"]["ipv6_prefix_prefix_length"]
+                    is not None
+                ):
+                    cmd += " {0}".format(
+                        rule["destination"]["ipv6_prefix_prefix_length"]
+                    )
+                elif rule["destination"]["any"]:
                     cmd += " any"
-                if rule['dscp_matching'] is not None:
-                    cmd += " dscp-matching {0}".format(rule['dscp_matching'])
-                if rule['priority_matching'] is not None:
-                    cmd += " 802.1p-priority-matching {0}".format(rule['priority_matching'])
-                    if rule['fragments']:
+                if rule["dscp_matching"] is not None:
+                    cmd += " dscp-matching {0}".format(rule["dscp_matching"])
+                if rule["priority_matching"] is not None:
+                    cmd += " 802.1p-priority-matching {0}".format(
+                        rule["priority_matching"]
+                    )
+                    if rule["fragments"]:
                         cmd += " fragments"
-                    elif rule['routing']:
+                    elif rule["routing"]:
                         cmd += " routing"
-                if rule['dscp_marking'] is not None:
-                    cmd += " dscp-marking {0}".format(rule['dscp_marking'])
-                    if rule['priority_marking'] is not None:
-                        cmd += " 802.1p-priority-marking {0}".format(rule['priority_marking'])
-                        if rule['internal_priority_marking'] is not None:
-                            cmd += " internal-priority-marking {0}".format(rule['internal_priority_marking'])
-                            if rule['log']:
+                if rule["dscp_marking"] is not None:
+                    cmd += " dscp-marking {0}".format(rule["dscp_marking"])
+                    if rule["priority_marking"] is not None:
+                        cmd += " 802.1p-priority-marking {0}".format(
+                            rule["priority_marking"]
+                        )
+                        if rule["internal_priority_marking"] is not None:
+                            cmd += " internal-priority-marking {0}".format(
+                                rule["internal_priority_marking"]
+                            )
+                            if rule["log"]:
                                 cmd += " log"
-                            if rule['mirror']:
+                            if rule["mirror"]:
                                 cmd += " mirror"
-                elif rule['priority_marking'] is not None:
-                    cmd += " 802.1p-priority-marking {0}".format(rule['priority_marking'])
-                    if rule['internal_priority_marking'] is not None:
-                        cmd += " internal-priority-marking {0}".format(rule['internal_priority_marking'])
-                        if rule['log']:
+                elif rule["priority_marking"] is not None:
+                    cmd += " 802.1p-priority-marking {0}".format(
+                        rule["priority_marking"]
+                    )
+                    if rule["internal_priority_marking"] is not None:
+                        cmd += " internal-priority-marking {0}".format(
+                            rule["internal_priority_marking"]
+                        )
+                        if rule["log"]:
                             cmd += " log"
-                        if rule['mirror']:
+                        if rule["mirror"]:
                             cmd += " mirror"
-                elif rule['internal_priority_marking'] is not None:
-                    if rule['fragments'] is False:
-                        cmd += " internal-priority-marking {0}".format(rule['internal_priority_marking'])
-                        if rule['log']:
+                elif rule["internal_priority_marking"] is not None:
+                    if rule["fragments"] is False:
+                        cmd += " internal-priority-marking {0}".format(
+                            rule["internal_priority_marking"]
+                        )
+                        if rule["log"]:
                             cmd += " log"
-                        if rule['mirror']:
+                        if rule["mirror"]:
                             cmd += " mirror"
-                elif rule['traffic_policy_name'] is not None:
-                    cmd += " traffic-policy {0}".format(rule['traffic_policy_name'])
-                    if rule['log']:
+                elif rule["traffic_policy_name"] is not None:
+                    cmd += " traffic-policy {0}".format(
+                        rule["traffic_policy_name"]
+                    )
+                    if rule["log"]:
                         cmd += " log"
-                    elif rule['mirror']:
+                    elif rule["mirror"]:
                         cmd += " mirror"
                 else:
-                    if rule['log']:
+                    if rule["log"]:
                         cmd += " log"
-                    if rule['mirror']:
+                    if rule["mirror"]:
                         cmd += " mirror"
 
             rules_acl_cmds.append(cmd)
@@ -495,99 +673,162 @@ def build_command(module, acl_name=None, accounting=None, rules=None, state=None
 
 
 def main():
-
-    """entry point for module execution
-    """
+    """entry point for module execution"""
     remark_spec = dict(
-        comment_text=dict(type='str'),
-        state=dict(type='str', default='present', choices=['present', 'absent'])
+        comment_text=dict(type="str"),
+        state=dict(
+            type="str", default="present", choices=["present", "absent"]
+        ),
     )
     source_spec = dict(
-        host_ipv6_address=dict(type='str'),
-        ipv6_prefix_prefix_length=dict(type='str'),
-        any=dict(type='bool')
+        host_ipv6_address=dict(type="str"),
+        ipv6_prefix_prefix_length=dict(type="str"),
+        any=dict(type="bool"),
     )
     source_comparison_operators_spec = dict(
-        operator=dict(type='str', choices=['eq', 'gt', 'lt', 'neq', 'range']),
-        port_num=dict(type='int'),
-        port_name=dict(type='str'),
-        high_port_num=dict(type='int'),
-        high_port_name=dict(type='str')
+        operator=dict(type="str", choices=["eq", "gt", "lt", "neq", "range"]),
+        port_num=dict(type="int"),
+        port_name=dict(type="str"),
+        high_port_num=dict(type="int"),
+        high_port_name=dict(type="str"),
     )
     destination_spec = dict(
-        host_ipv6_address=dict(type='str'),
-        ipv6_prefix_prefix_length=dict(type='str'),
-        any=dict(type='bool')
+        host_ipv6_address=dict(type="str"),
+        ipv6_prefix_prefix_length=dict(type="str"),
+        any=dict(type="bool"),
     )
     destination_comparison_operators_spec = dict(
-        operator=dict(type='str', choices=['eq', 'gt', 'lt', 'neq', 'range']),
-        port_num=dict(type='int'),
-        port_name=dict(type='str'),
-        high_port_num=dict(type='int'),
-        high_port_name=dict(type='str')
+        operator=dict(type="str", choices=["eq", "gt", "lt", "neq", "range"]),
+        port_num=dict(type="int"),
+        port_name=dict(type="str"),
+        high_port_num=dict(type="int"),
+        high_port_name=dict(type="str"),
     )
     rules_spec = dict(
-        remark=dict(type='dict', options=remark_spec),
-        seq_num=dict(type='int'),
-        rule_type=dict(type='str', choices=['deny', 'permit'], required=True),
-        ip_protocol_name=dict(type='str', choices=['ahp', 'esp', 'icmp', 'ipv6', 'sctp', 'tcp', 'udp']),
-        ip_protocol_num=dict(type='int'),
-        source=dict(type='dict', required=True, options=source_spec, required_one_of=[['host_ipv6_address', 'ipv6_prefix_prefix_length', 'any']],
-                    mutually_exclusive=[['host_ipv6_address', 'ipv6_prefix_prefix_length', 'any']]),
-        source_comparison_operators=dict(type='dict', options=source_comparison_operators_spec),
-        destination=dict(type='dict', required=True, options=destination_spec, required_one_of=[['host_ipv6_address', 'ipv6_prefix_prefix_length', 'any']],
-                         mutually_exclusive=[['host_ipv6_address', 'ipv6_prefix_prefix_length', 'any']]),
-        established=dict(type='bool', default='no'),
-        destination_comparison_operators=dict(type='dict', options=destination_comparison_operators_spec),
-        icmp_num=dict(type='int'),
-        icmp_type=dict(type='str', choices=['beyond-scope', 'destination-unreachable', 'echo-reply', 'echo-request', 'header', 'hop-limit', 'mld-query',
-                                            'mld-reduction', 'mld-report', 'nd-na', 'nd-ns', 'next-header', 'no-admin', 'no-route', 'packet-too-big',
-                                            'parameter-option', 'parameter-problem', 'port-unreachable', 'reassembly-timeout', 'renum-command', 'renum-result',
-                                            'renum-seq-number', 'router-advertisement', 'router-renumbering', 'router-solicitation',
-                                            'time-exceeded', 'unreachable']),
-        icmp_code=dict(type='int'),
-        fragments=dict(type='bool', default='no'),
-        routing=dict(type='bool', default='no'),
-        dscp_matching=dict(type='int'),
-        dscp_marking=dict(type='int'),
-        priority_matching=dict(type='int'),
-        priority_marking=dict(type='int'),
-        internal_priority_marking=dict(type='int'),
-        traffic_policy_name=dict(type='str'),
-        log=dict(type='bool', default='no'),
-        mirror=dict(type='bool', default='no'),
-        state=dict(type='str', default='present', choices=['present', 'absent'])
+        remark=dict(type="dict", options=remark_spec),
+        seq_num=dict(type="int"),
+        rule_type=dict(type="str", choices=["deny", "permit"], required=True),
+        ip_protocol_name=dict(
+            type="str",
+            choices=["ahp", "esp", "icmp", "ipv6", "sctp", "tcp", "udp"],
+        ),
+        ip_protocol_num=dict(type="int"),
+        source=dict(
+            type="dict",
+            required=True,
+            options=source_spec,
+            required_one_of=[
+                ["host_ipv6_address", "ipv6_prefix_prefix_length", "any"]
+            ],
+            mutually_exclusive=[
+                ["host_ipv6_address", "ipv6_prefix_prefix_length", "any"]
+            ],
+        ),
+        source_comparison_operators=dict(
+            type="dict", options=source_comparison_operators_spec
+        ),
+        destination=dict(
+            type="dict",
+            required=True,
+            options=destination_spec,
+            required_one_of=[
+                ["host_ipv6_address", "ipv6_prefix_prefix_length", "any"]
+            ],
+            mutually_exclusive=[
+                ["host_ipv6_address", "ipv6_prefix_prefix_length", "any"]
+            ],
+        ),
+        established=dict(type="bool", default="no"),
+        destination_comparison_operators=dict(
+            type="dict", options=destination_comparison_operators_spec
+        ),
+        icmp_num=dict(type="int"),
+        icmp_type=dict(
+            type="str",
+            choices=[
+                "beyond-scope",
+                "destination-unreachable",
+                "echo-reply",
+                "echo-request",
+                "header",
+                "hop-limit",
+                "mld-query",
+                "mld-reduction",
+                "mld-report",
+                "nd-na",
+                "nd-ns",
+                "next-header",
+                "no-admin",
+                "no-route",
+                "packet-too-big",
+                "parameter-option",
+                "parameter-problem",
+                "port-unreachable",
+                "reassembly-timeout",
+                "renum-command",
+                "renum-result",
+                "renum-seq-number",
+                "router-advertisement",
+                "router-renumbering",
+                "router-solicitation",
+                "time-exceeded",
+                "unreachable",
+            ],
+        ),
+        icmp_code=dict(type="int"),
+        fragments=dict(type="bool", default="no"),
+        routing=dict(type="bool", default="no"),
+        dscp_matching=dict(type="int"),
+        dscp_marking=dict(type="int"),
+        priority_matching=dict(type="int"),
+        priority_marking=dict(type="int"),
+        internal_priority_marking=dict(type="int"),
+        traffic_policy_name=dict(type="str"),
+        log=dict(type="bool", default="no"),
+        mirror=dict(type="bool", default="no"),
+        state=dict(
+            type="str", default="present", choices=["present", "absent"]
+        ),
     )
-    required_one_of = [['ip_protocol_name', 'ip_protocol_num']]
-    mutually_exclusive = [['ip_protocol_name', 'ip_protocol_num']]
+    required_one_of = [["ip_protocol_name", "ip_protocol_num"]]
+    mutually_exclusive = [["ip_protocol_name", "ip_protocol_num"]]
     argument_spec = dict(
-        acl_name=dict(type='str', required=True),
-        accounting=dict(type='str', choices=['enable', 'disable']),
-        rules=dict(type='list', elements='dict', options=rules_spec, required_one_of=required_one_of, mutually_exclusive=mutually_exclusive),
-        state=dict(type='str', default='present', choices=['present', 'absent'])
+        acl_name=dict(type="str", required=True),
+        accounting=dict(type="str", choices=["enable", "disable"]),
+        rules=dict(
+            type="list",
+            elements="dict",
+            options=rules_spec,
+            required_one_of=required_one_of,
+            mutually_exclusive=mutually_exclusive,
+        ),
+        state=dict(
+            type="str", default="present", choices=["present", "absent"]
+        ),
     )
-    module = AnsibleModule(argument_spec=argument_spec,
-                           supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
+    )
     warnings = list()
-    results = {'changed': False}
+    results = {"changed": False}
     acl_name = module.params["acl_name"]
     accounting = module.params["accounting"]
     rules = module.params["rules"]
     state = module.params["state"]
 
     if warnings:
-        results['warnings'] = warnings
+        results["warnings"] = warnings
 
     commands = build_command(module, acl_name, accounting, rules, state)
-    results['commands'] = commands
+    results["commands"] = commands
 
     if commands:
         if not module.check_mode:
             response = load_config(module, commands)
 
-        results['changed'] = True
+        results["changed"] = True
     module.exit_json(**results)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

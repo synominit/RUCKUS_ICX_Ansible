@@ -3,13 +3,17 @@
 # Simplified BSD License (see licenses/simplified_bsd.txt or https://opensource.org/licenses/BSD-2-Clause)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 import json
+
 from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import env_fallback
-from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import to_list
 from ansible.module_utils.connection import Connection, ConnectionError
+from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import (
+    to_list,
+)
 
 _DEVICE_CONFIGS = {}
 
@@ -23,7 +27,7 @@ def load_config(module, commands):
 
     try:
         resp = connection.edit_config(candidate=commands)
-        return resp.get('response')
+        return resp.get("response")
     except ConnectionError as exc:
         module.fail_json(msg=to_text(exc))
 
@@ -42,7 +46,7 @@ def exec_scp(module, command):
 
 
 def get_config(module, flags=None, compare=None):
-    flag_str = ' '.join(to_list(flags))
+    flag_str = " ".join(to_list(flags))
     try:
         return _DEVICE_CONFIGS[flag_str]
     except KeyError:
@@ -50,8 +54,8 @@ def get_config(module, flags=None, compare=None):
         try:
             out = connection.get_config(flags=flags, compare=compare)
         except ConnectionError as exc:
-            module.fail_json(msg=to_text(exc, errors='surrogate_then_replace'))
-        cfg = to_text(out, errors='surrogate_then_replace').strip()
+            module.fail_json(msg=to_text(exc, errors="surrogate_then_replace"))
+        cfg = to_text(out, errors="surrogate_then_replace").strip()
         _DEVICE_CONFIGS[flag_str] = cfg
         return cfg
 
@@ -65,5 +69,5 @@ def get_defaults_flag(module):
     try:
         out = connection.get_defaults_flag()
     except ConnectionError as exc:
-        module.fail_json(msg=to_text(exc, errors='surrogate_then_replace'))
-    return to_text(out, errors='surrogate_then_replace').strip()
+        module.fail_json(msg=to_text(exc, errors="surrogate_then_replace"))
+    return to_text(out, errors="surrogate_then_replace").strip()

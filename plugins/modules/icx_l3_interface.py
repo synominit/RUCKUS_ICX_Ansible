@@ -3,10 +3,11 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: icx_l3_interface
 author: "Ruckus Wireless (@Commscope)"
@@ -114,7 +115,7 @@ options:
        Module will use environment variable value(default:False), unless it is overridden, by specifying it as module parameter.
     type: bool
     default: no
-'''
+"""
 
 EXAMPLES = """
 - name: Remove ethernet 1/1/1 IPv4 and IPv6 address
@@ -181,40 +182,65 @@ commands:
 
 import re
 from copy import deepcopy
+
 from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import AnsibleModule, env_fallback
+from ansible.module_utils.common.network import (
+    is_masklen,
+    is_netmask,
+    to_masklen,
+    to_netmask,
+)
 from ansible.module_utils.connection import exec_command
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import get_config, load_config
-from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.config import NetworkConfig
-from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import remove_default_spec
-from ansible.module_utils.common.network import is_netmask, is_masklen, to_netmask, to_masklen
+from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.config import (
+    NetworkConfig,
+)
+from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import (
+    remove_default_spec,
+)
+from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+    get_config,
+    load_config,
+)
 
 
 def validate_ipv4(value, module):
     if value:
-        address = value.split('/')
+        address = value.split("/")
         if len(address) != 2:
-            module.fail_json(msg='address format is <ipv4 address>/<mask>, got invalid format %s' % value)
+            module.fail_json(
+                msg="address format is <ipv4 address>/<mask>, got invalid format %s"
+                % value
+            )
         else:
             if not is_masklen(address[1]):
-                module.fail_json(msg='invalid value for mask: %s, mask should be in range 0-32' % address[1])
+                module.fail_json(
+                    msg="invalid value for mask: %s, mask should be in range 0-32"
+                    % address[1]
+                )
 
 
 def validate_ipv6(value, module):
     if value:
-        address = value.split('/')
+        address = value.split("/")
         if len(address) != 2:
-            module.fail_json(msg='address format is <ipv6 address>/<mask>, got invalid format %s' % value)
+            module.fail_json(
+                msg="address format is <ipv6 address>/<mask>, got invalid format %s"
+                % value
+            )
         else:
             if not 0 <= int(address[1]) <= 128:
-                module.fail_json(msg='invalid value for mask: %s, mask should be in range 0-128' % address[1])
+                module.fail_json(
+                    msg="invalid value for mask: %s, mask should be in range 0-128"
+                    % address[1]
+                )
 
 
 def validate_param_values(module, obj, param=None):
     if param is None:
         param = module.params
     for key in obj:
-        validator = globals().get('validate_%s' % key)
+        validator = globals().get("validate_%s" % key)
         if callable(validator):
             validator(param.get(key), module)
 
@@ -222,7 +248,7 @@ def validate_param_values(module, obj, param=None):
 def map_params_to_obj(module):
     obj = []
 
-    aggregate = module.params.get('aggregate')
+    aggregate = module.params.get("aggregate")
     if aggregate:
         for item in aggregate:
             for key in item:
@@ -232,15 +258,17 @@ def map_params_to_obj(module):
             validate_param_values(module, item, item)
             obj.append(item.copy())
     else:
-        obj.append({
-            'name': module.params['name'],
-            'ipv4': module.params['ipv4'],
-            'ipv6': module.params['ipv6'],
-            'state': module.params['state'],
-            'replace': module.params['replace'],
-            'mode': module.params['mode'],
-            'secondary': module.params['secondary'],
-        })
+        obj.append(
+            {
+                "name": module.params["name"],
+                "ipv4": module.params["ipv4"],
+                "ipv6": module.params["ipv6"],
+                "state": module.params["state"],
+                "replace": module.params["replace"],
+                "mode": module.params["mode"],
+                "secondary": module.params["secondary"],
+            }
+        )
 
         validate_param_values(module, obj)
 
@@ -248,14 +276,14 @@ def map_params_to_obj(module):
 
 
 def parse_config_argument(configobj, name, arg=None):
-    cfg = configobj['interface %s' % name]
-    cfg = '\n'.join(cfg.children)
+    cfg = configobj["interface %s" % name]
+    cfg = "\n".join(cfg.children)
 
     values = []
-    matches = re.finditer(r'%s (.+)$' % arg, cfg, re.M)
+    matches = re.finditer(r"%s (.+)$" % arg, cfg, re.M)
     for match in matches:
         match_str = match.group(1).strip()
-        if arg == 'ipv6 address':
+        if arg == "ipv6 address":
             values.append(match_str)
         else:
             values = match_str
@@ -266,34 +294,36 @@ def parse_config_argument(configobj, name, arg=None):
 
 def search_obj_in_list(name, lst):
     for o in lst:
-        if o['name'] == name:
+        if o["name"] == name:
             return o
 
     return None
 
 
 def map_config_to_obj(module):
-    compare = module.params['check_running_config']
-    config = get_config(module, flags=['| begin interface'], compare=compare)
+    compare = module.params["check_running_config"]
+    config = get_config(module, flags=["| begin interface"], compare=compare)
     configobj = NetworkConfig(indent=1, contents=config)
 
-    match = re.findall(r'^interface (\S+ \S+)', config, re.M)
+    match = re.findall(r"^interface (\S+ \S+)", config, re.M)
     if not match:
         return list()
 
     instances = list()
 
     for item in set(match):
-        ipv4 = parse_config_argument(configobj, item, 'ip address')
+        ipv4 = parse_config_argument(configobj, item, "ip address")
         if ipv4:
-            address = ipv4.strip().split(' ')
+            address = ipv4.strip().split(" ")
             if len(address) == 2 and is_netmask(address[1]):
-                ipv4 = '{0}/{1}'.format(address[0], to_text(to_masklen(address[1])))
+                ipv4 = "{0}/{1}".format(
+                    address[0], to_text(to_masklen(address[1]))
+                )
         obj = {
-            'name': item,
-            'ipv4': ipv4,
-            'ipv6': parse_config_argument(configobj, item, 'ipv6 address'),
-            'state': 'present'
+            "name": item,
+            "ipv4": ipv4,
+            "ipv6": parse_config_argument(configobj, item, "ipv6 address"),
+            "state": "present",
         }
         instances.append(obj)
 
@@ -304,58 +334,81 @@ def map_obj_to_commands(updates, module):
     commands = list()
     want, have = updates
     for w in want:
-        name = w['name']
-        ipv4 = w['ipv4']
-        ipv6 = w['ipv6']
-        state = w['state']
-        if 'replace' in w:
-            replace = w['replace'] == 'yes'
+        name = w["name"]
+        ipv4 = w["ipv4"]
+        ipv6 = w["ipv6"]
+        state = w["state"]
+        if "replace" in w:
+            replace = w["replace"] == "yes"
         else:
             replace = False
-        if w['mode'] is not None:
-            mode = ' ' + w['mode']
+        if w["mode"] is not None:
+            mode = " " + w["mode"]
         else:
-            mode = ''
-        if w['secondary'] is not None:
-            secondary = w['secondary'] == 'yes'
+            mode = ""
+        if w["secondary"] is not None:
+            secondary = w["secondary"] == "yes"
         else:
             secondary = False
 
-        interface = 'interface ' + name
+        interface = "interface " + name
         commands.append(interface)
 
         obj_in_have = search_obj_in_list(name, have)
-        if state == 'absent' and have == []:
+        if state == "absent" and have == []:
             if ipv4:
-                address = ipv4.split('/')
+                address = ipv4.split("/")
                 if len(address) == 2:
-                    ipv4 = '{addr} {mask}'.format(addr=address[0], mask=to_netmask(address[1]))
-                commands.append('no ip address {ip}'.format(ip=ipv4))
+                    ipv4 = "{addr} {mask}".format(
+                        addr=address[0], mask=to_netmask(address[1])
+                    )
+                commands.append("no ip address {ip}".format(ip=ipv4))
             if ipv6:
-                commands.append('no ipv6 address {ip}'.format(ip=ipv6))
+                commands.append("no ipv6 address {ip}".format(ip=ipv6))
 
-        elif state == 'absent' and obj_in_have:
-            if obj_in_have['ipv4']:
+        elif state == "absent" and obj_in_have:
+            if obj_in_have["ipv4"]:
                 if ipv4:
-                    address = ipv4.split('/')
+                    address = ipv4.split("/")
                     if len(address) == 2:
-                        ipv4 = '{addr} {mask}'.format(addr=address[0], mask=to_netmask(address[1]))
-                    commands.append('no ip address {ip}'.format(ip=ipv4))
-            if obj_in_have['ipv6']:
+                        ipv4 = "{addr} {mask}".format(
+                            addr=address[0], mask=to_netmask(address[1])
+                        )
+                    commands.append("no ip address {ip}".format(ip=ipv4))
+            if obj_in_have["ipv6"]:
                 if ipv6:
-                    commands.append('no ipv6 address {ip}'.format(ip=ipv6))
+                    commands.append("no ipv6 address {ip}".format(ip=ipv6))
 
-        elif state == 'present':
+        elif state == "present":
             if ipv4:
-                if obj_in_have is None or obj_in_have.get('ipv4') is None or ipv4 != obj_in_have['ipv4']:
-                    address = ipv4.split('/')
+                if (
+                    obj_in_have is None
+                    or obj_in_have.get("ipv4") is None
+                    or ipv4 != obj_in_have["ipv4"]
+                ):
+                    address = ipv4.split("/")
                     if len(address) == 2:
-                        ipv4 = '{0} {1}'.format(address[0], to_netmask(address[1]))
-                    commands.append('ip address %s%s%s%s' % (format(ipv4), mode, ' replace' if (replace) else '', ' secondary' if (secondary) else ''))
+                        ipv4 = "{0} {1}".format(
+                            address[0], to_netmask(address[1])
+                        )
+                    commands.append(
+                        "ip address %s%s%s%s"
+                        % (
+                            format(ipv4),
+                            mode,
+                            " replace" if (replace) else "",
+                            " secondary" if (secondary) else "",
+                        )
+                    )
 
             if ipv6:
-                if obj_in_have is None or obj_in_have.get('ipv6') is None or ipv6.lower() not in [addr.lower() for addr in obj_in_have['ipv6']]:
-                    commands.append('ipv6 address {ip}'.format(ip=ipv6))
+                if (
+                    obj_in_have is None
+                    or obj_in_have.get("ipv6") is None
+                    or ipv6.lower()
+                    not in [addr.lower() for addr in obj_in_have["ipv6"]]
+                ):
+                    commands.append("ipv6 address {ip}".format(ip=ipv6))
 
         if commands[-1] == interface:
             commands.pop(-1)
@@ -366,41 +419,49 @@ def map_obj_to_commands(updates, module):
 
 
 def main():
-    """ main entry point for module execution
-    """
+    """main entry point for module execution"""
     element_spec = dict(
         name=dict(),
         ipv4=dict(),
         ipv6=dict(),
-        replace=dict(choices=['yes', 'no']),
-        mode=dict(choices=['dynamic', 'ospf-ignore', 'ospf-passive']),
-        secondary=dict(choices=['yes', 'no']),
-        check_running_config=dict(default=False, type='bool', fallback=(env_fallback, ['ANSIBLE_CHECK_ICX_RUNNING_CONFIG'])),
-        state=dict(default='present',
-                   choices=['present', 'absent']),
+        replace=dict(choices=["yes", "no"]),
+        mode=dict(choices=["dynamic", "ospf-ignore", "ospf-passive"]),
+        secondary=dict(choices=["yes", "no"]),
+        check_running_config=dict(
+            default=False,
+            type="bool",
+            fallback=(env_fallback, ["ANSIBLE_CHECK_ICX_RUNNING_CONFIG"]),
+        ),
+        state=dict(default="present", choices=["present", "absent"]),
     )
 
     aggregate_spec = deepcopy(element_spec)
-    aggregate_spec['name'] = dict(required=True)
+    aggregate_spec["name"] = dict(required=True)
 
     remove_default_spec(aggregate_spec)
 
     argument_spec = dict(
-        aggregate=dict(type='list', elements='dict', options=aggregate_spec)
+        aggregate=dict(type="list", elements="dict", options=aggregate_spec)
     )
 
     argument_spec.update(element_spec)
 
-    required_one_of = [['name', 'aggregate']]
-    mutually_exclusive = [['name', 'aggregate'], ['secondary', 'replace'], ['secondary', 'mode']]
-    module = AnsibleModule(argument_spec=argument_spec,
-                           required_one_of=required_one_of,
-                           mutually_exclusive=mutually_exclusive,
-                           supports_check_mode=True)
+    required_one_of = [["name", "aggregate"]]
+    mutually_exclusive = [
+        ["name", "aggregate"],
+        ["secondary", "replace"],
+        ["secondary", "mode"],
+    ]
+    module = AnsibleModule(
+        argument_spec=argument_spec,
+        required_one_of=required_one_of,
+        mutually_exclusive=mutually_exclusive,
+        supports_check_mode=True,
+    )
 
     warnings = list()
 
-    result = {'changed': False}
+    result = {"changed": False}
     want = map_params_to_obj(module)
     have = map_config_to_obj(module)
     commands = map_obj_to_commands((want, have), module)
@@ -410,15 +471,15 @@ def main():
             resp = load_config(module, commands)
             warnings.extend((out for out in resp if out))
 
-        result['changed'] = True
+        result["changed"] = True
 
     if warnings:
-        result['warnings'] = warnings
+        result["warnings"] = warnings
 
-    result['commands'] = commands
+    result["commands"] = commands
 
     module.exit_json(**result)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

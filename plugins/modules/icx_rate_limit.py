@@ -3,11 +3,14 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
 
 DOCUMENTATION = """
@@ -292,14 +295,19 @@ changed:
   type: bool
 """
 
-from copy import deepcopy
 import re
+from copy import deepcopy
 
 from ansible.module_utils._text import to_text
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import load_config, get_config
 from ansible.module_utils.basic import AnsibleModule, env_fallback
 from ansible.module_utils.connection import ConnectionError, exec_command
-from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import remove_default_spec
+from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import (
+    remove_default_spec,
+)
+from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+    get_config,
+    load_config,
+)
 
 
 def map_obj_to_commands(updates, module):
@@ -307,147 +315,235 @@ def map_obj_to_commands(updates, module):
     want, have = updates
     for w in want:
         wcmds = []
-        wcmd = ''
-        interface = ''
-        if w.get('rate_limit_input'):
-            if w['rate_limit_input']['lag']:
-                if not w['rate_limit_input']['port']:
+        wcmd = ""
+        interface = ""
+        if w.get("rate_limit_input"):
+            if w["rate_limit_input"]["lag"]:
+                if not w["rate_limit_input"]["port"]:
                     module.fail_json(msg="port is required")
-                wcmds.append('lag %s' % (w['rate_limit_input']['lag']))
-                interface = ('lag %s' % (w['rate_limit_input']['lag']))
+                wcmds.append("lag %s" % (w["rate_limit_input"]["lag"]))
+                interface = "lag %s" % (w["rate_limit_input"]["lag"])
             else:
-                wcmds.append('interface ethernet %s' % (w['rate_limit_input']['port']))
-                interface = ('interface ethernet %s' % (w['rate_limit_input']['port']))
-            if w['rate_limit_input']['state'] == 'present':
-                if w['rate_limit_input']['lag']:
-                    wcmd = 'rate-limit input fixed ethernet %s %s' % (w['rate_limit_input']['port'], w['rate_limit_input']['average_rate'])
+                wcmds.append(
+                    "interface ethernet %s" % (w["rate_limit_input"]["port"])
+                )
+                interface = "interface ethernet %s" % (
+                    w["rate_limit_input"]["port"]
+                )
+            if w["rate_limit_input"]["state"] == "present":
+                if w["rate_limit_input"]["lag"]:
+                    wcmd = "rate-limit input fixed ethernet %s %s" % (
+                        w["rate_limit_input"]["port"],
+                        w["rate_limit_input"]["average_rate"],
+                    )
                     wcmds.append(wcmd)
-                elif w['rate_limit_input']['burst_size']:
-                    wcmd = 'rate-limit input fixed %s burst %s' % (w['rate_limit_input']['average_rate'], w['rate_limit_input']['burst_size'])
+                elif w["rate_limit_input"]["burst_size"]:
+                    wcmd = "rate-limit input fixed %s burst %s" % (
+                        w["rate_limit_input"]["average_rate"],
+                        w["rate_limit_input"]["burst_size"],
+                    )
                     wcmds.append(wcmd)
                 else:
-                    wcmd = 'rate-limit input fixed %s' % (w['rate_limit_input']['average_rate'])
+                    wcmd = "rate-limit input fixed %s" % (
+                        w["rate_limit_input"]["average_rate"]
+                    )
                     wcmds.append(wcmd)
             else:
-                if w['rate_limit_input']['lag']:
-                    wcmd = 'no rate-limit input fixed ethernet %s %s' % (w['rate_limit_input']['port'], w['rate_limit_input']['average_rate'])
+                if w["rate_limit_input"]["lag"]:
+                    wcmd = "no rate-limit input fixed ethernet %s %s" % (
+                        w["rate_limit_input"]["port"],
+                        w["rate_limit_input"]["average_rate"],
+                    )
                     wcmds.append(wcmd)
-                elif w['rate_limit_input']['burst_size']:
-                    wcmd = 'no rate-limit input fixed %s burst %s' % (w['rate_limit_input']['average_rate'], w['rate_limit_input']['burst_size'])
+                elif w["rate_limit_input"]["burst_size"]:
+                    wcmd = "no rate-limit input fixed %s burst %s" % (
+                        w["rate_limit_input"]["average_rate"],
+                        w["rate_limit_input"]["burst_size"],
+                    )
                     wcmds.append(wcmd)
                 else:
-                    wcmd = 'no rate-limit input fixed %s' % (w['rate_limit_input']['average_rate'])
+                    wcmd = "no rate-limit input fixed %s" % (
+                        w["rate_limit_input"]["average_rate"]
+                    )
                     wcmds.append(wcmd)
 
-        elif w.get('rate_limit_output'):
-            if w['rate_limit_output']['lag']:
-                if not w['rate_limit_output']['port']:
+        elif w.get("rate_limit_output"):
+            if w["rate_limit_output"]["lag"]:
+                if not w["rate_limit_output"]["port"]:
                     module.fail_json(msg="interface is required")
-                wcmds.append('lag %s' % (w['rate_limit_output']['lag']))
-                interface = ('lag %s' % (w['rate_limit_output']['lag']))
+                wcmds.append("lag %s" % (w["rate_limit_output"]["lag"]))
+                interface = "lag %s" % (w["rate_limit_output"]["lag"])
             else:
-                wcmds.append('interface ethernet %s' % (w['rate_limit_output']['port']))
-                interface = ('interface ethernet %s' % (w['rate_limit_output']['port']))
-            if w['rate_limit_output']['state'] == 'present':
-                if w['rate_limit_output']['priority_queue']:
-                    if w['rate_limit_output']['lag']:
-                        wcmd = ('rate-limit output shaping ethernet %s %s priority %s'
-                                % (w['rate_limit_output']['port'], w['rate_limit_output']['value'],
-                                   w['rate_limit_output']['priority_queue']))
+                wcmds.append(
+                    "interface ethernet %s" % (w["rate_limit_output"]["port"])
+                )
+                interface = "interface ethernet %s" % (
+                    w["rate_limit_output"]["port"]
+                )
+            if w["rate_limit_output"]["state"] == "present":
+                if w["rate_limit_output"]["priority_queue"]:
+                    if w["rate_limit_output"]["lag"]:
+                        wcmd = (
+                            "rate-limit output shaping ethernet %s %s priority %s"
+                            % (
+                                w["rate_limit_output"]["port"],
+                                w["rate_limit_output"]["value"],
+                                w["rate_limit_output"]["priority_queue"],
+                            )
+                        )
                         wcmds.append(wcmd)
                     else:
-                        wcmd = 'rate-limit output shaping %s priority %s' % (w['rate_limit_output']['value'], w['rate_limit_output']['priority_queue'])
+                        wcmd = "rate-limit output shaping %s priority %s" % (
+                            w["rate_limit_output"]["value"],
+                            w["rate_limit_output"]["priority_queue"],
+                        )
                         wcmds.append(wcmd)
                 else:
-                    if w['rate_limit_output']['lag']:
-                        wcmd = 'rate-limit output shaping ethernet %s %s' % (w['rate_limit_output']['port'], w['rate_limit_output']['value'])
+                    if w["rate_limit_output"]["lag"]:
+                        wcmd = "rate-limit output shaping ethernet %s %s" % (
+                            w["rate_limit_output"]["port"],
+                            w["rate_limit_output"]["value"],
+                        )
                         wcmds.append(wcmd)
                     else:
-                        wcmd = 'rate-limit output shaping %s' % (w['rate_limit_output']['value'])
+                        wcmd = "rate-limit output shaping %s" % (
+                            w["rate_limit_output"]["value"]
+                        )
                         wcmds.append(wcmd)
             else:
-                if w['rate_limit_output']['priority_queue']:
-                    if w['rate_limit_output']['lag']:
-                        wcmd = ('no rate-limit output shaping ethernet %s %s priority %s'
-                                % (w['rate_limit_output']['port'], w['rate_limit_output']['value'],
-                                   w['rate_limit_output']['priority_queue']))
+                if w["rate_limit_output"]["priority_queue"]:
+                    if w["rate_limit_output"]["lag"]:
+                        wcmd = (
+                            "no rate-limit output shaping ethernet %s %s priority %s"
+                            % (
+                                w["rate_limit_output"]["port"],
+                                w["rate_limit_output"]["value"],
+                                w["rate_limit_output"]["priority_queue"],
+                            )
+                        )
                         wcmds.append(wcmd)
                     else:
-                        wcmd = 'no rate-limit output shaping %s priority %s' % (w['rate_limit_output']['value'], w['rate_limit_output']['priority_queue'])
+                        wcmd = (
+                            "no rate-limit output shaping %s priority %s"
+                            % (
+                                w["rate_limit_output"]["value"],
+                                w["rate_limit_output"]["priority_queue"],
+                            )
+                        )
                         wcmds.append(wcmd)
                 else:
-                    if w['rate_limit_output']['lag']:
-                        wcmd = 'no rate-limit output shaping ethernet %s %s' % (w['rate_limit_output']['port'], w['rate_limit_output']['value'])
+                    if w["rate_limit_output"]["lag"]:
+                        wcmd = (
+                            "no rate-limit output shaping ethernet %s %s"
+                            % (
+                                w["rate_limit_output"]["port"],
+                                w["rate_limit_output"]["value"],
+                            )
+                        )
                         wcmds.append(wcmd)
                     else:
-                        wcmd = 'no rate-limit output shaping %s' % (w['rate_limit_output']['value'])
+                        wcmd = "no rate-limit output shaping %s" % (
+                            w["rate_limit_output"]["value"]
+                        )
                         wcmds.append(wcmd)
 
-        elif w.get('broadcast_limit'):
-            interface = ('interface ethernet %s' % (w['broadcast_limit']['port']))
-            wcmds.append('interface ethernet %s' % (w['broadcast_limit']['port']))
-            if w['broadcast_limit']['log']:
-                wcmd = 'broadcast limit %s kbps log' % (w['broadcast_limit']['kbps'])
+        elif w.get("broadcast_limit"):
+            interface = "interface ethernet %s" % (
+                w["broadcast_limit"]["port"]
+            )
+            wcmds.append(
+                "interface ethernet %s" % (w["broadcast_limit"]["port"])
+            )
+            if w["broadcast_limit"]["log"]:
+                wcmd = "broadcast limit %s kbps log" % (
+                    w["broadcast_limit"]["kbps"]
+                )
                 wcmds.append(wcmd)
-            elif not w['broadcast_limit']['log']:
-                wcmd = 'no broadcast limit %s kbps log' % (w['broadcast_limit']['kbps'])
+            elif not w["broadcast_limit"]["log"]:
+                wcmd = "no broadcast limit %s kbps log" % (
+                    w["broadcast_limit"]["kbps"]
+                )
                 wcmds.append(wcmd)
-            elif w['broadcast_limit']['log'] is None:
-                wcmd = 'broadcast limit %s kbps' % (w['broadcast_limit']['kbps'])
-                wcmds.append(wcmd)
-
-        elif w.get('unknown_unicast_limit'):
-            interface = ('interface ethernet %s' % (w['unknown_unicast_limit']['port']))
-            wcmds.append('interface ethernet %s' % (w['unknown_unicast_limit']['port']))
-            if w['unknown_unicast_limit']['log']:
-                wcmd = 'unknown-unicast limit %s kbps log' % (w['unknown_unicast_limit']['kbps'])
-                wcmds.append(wcmd)
-            elif not w['unknown_unicast_limit']['log']:
-                wcmd = 'no unknown-unicast limit %s kbps log' % (w['unknown_unicast_limit']['kbps'])
-                wcmds.append(wcmd)
-            elif w['unknown_unicast_limit']['log'] is None:
-                wcmd = 'unknown-unicast limit %s kbps' % (w['unknown_unicast_limit']['kbps'])
+            elif w["broadcast_limit"]["log"] is None:
+                wcmd = "broadcast limit %s kbps" % (
+                    w["broadcast_limit"]["kbps"]
+                )
                 wcmds.append(wcmd)
 
-        elif w.get('multicast_limit'):
-            interface = ('interface ethernet %s' % (w['multicast_limit']['port']))
-            wcmds.append('interface ethernet %s' % (w['multicast_limit']['port']))
-            if w['multicast_limit']['log']:
-                wcmd = 'multicast limit %s kbps log' % (w['multicast_limit']['kbps'])
+        elif w.get("unknown_unicast_limit"):
+            interface = "interface ethernet %s" % (
+                w["unknown_unicast_limit"]["port"]
+            )
+            wcmds.append(
+                "interface ethernet %s" % (w["unknown_unicast_limit"]["port"])
+            )
+            if w["unknown_unicast_limit"]["log"]:
+                wcmd = "unknown-unicast limit %s kbps log" % (
+                    w["unknown_unicast_limit"]["kbps"]
+                )
                 wcmds.append(wcmd)
-            elif not w['multicast_limit']['log']:
-                wcmd = 'no multicast limit %s kbps log' % (w['multicast_limit']['kbps'])
+            elif not w["unknown_unicast_limit"]["log"]:
+                wcmd = "no unknown-unicast limit %s kbps log" % (
+                    w["unknown_unicast_limit"]["kbps"]
+                )
                 wcmds.append(wcmd)
-            elif w['multicast_limit']['log'] is None:
-                wcmd = 'multicast limit %s kbps' % (w['multicast_limit']['kbps'])
+            elif w["unknown_unicast_limit"]["log"] is None:
+                wcmd = "unknown-unicast limit %s kbps" % (
+                    w["unknown_unicast_limit"]["kbps"]
+                )
                 wcmds.append(wcmd)
 
-        elif w.get('rate_limit_arp'):
-            if w['rate_limit_arp']['state'] == 'present':
-                wcmd = 'rate-limit-arp %s' % (w['rate_limit_arp']['number'])
+        elif w.get("multicast_limit"):
+            interface = "interface ethernet %s" % (
+                w["multicast_limit"]["port"]
+            )
+            wcmds.append(
+                "interface ethernet %s" % (w["multicast_limit"]["port"])
+            )
+            if w["multicast_limit"]["log"]:
+                wcmd = "multicast limit %s kbps log" % (
+                    w["multicast_limit"]["kbps"]
+                )
+                wcmds.append(wcmd)
+            elif not w["multicast_limit"]["log"]:
+                wcmd = "no multicast limit %s kbps log" % (
+                    w["multicast_limit"]["kbps"]
+                )
+                wcmds.append(wcmd)
+            elif w["multicast_limit"]["log"] is None:
+                wcmd = "multicast limit %s kbps" % (
+                    w["multicast_limit"]["kbps"]
+                )
+                wcmds.append(wcmd)
+
+        elif w.get("rate_limit_arp"):
+            if w["rate_limit_arp"]["state"] == "present":
+                wcmd = "rate-limit-arp %s" % (w["rate_limit_arp"]["number"])
                 wcmds.append(wcmd)
             else:
-                wcmd = 'no rate-limit-arp %s' % (w['rate_limit_arp']['number'])
+                wcmd = "no rate-limit-arp %s" % (w["rate_limit_arp"]["number"])
                 wcmds.append(wcmd)
 
-        elif w.get('rate_limit_bum'):
-            if w['rate_limit_bum']['state'] == 'present':
-                wcmd = 'rate-limit-log %s' % (w['rate_limit_bum']['minutes'])
+        elif w.get("rate_limit_bum"):
+            if w["rate_limit_bum"]["state"] == "present":
+                wcmd = "rate-limit-log %s" % (w["rate_limit_bum"]["minutes"])
                 wcmds.append(wcmd)
             else:
-                wcmd = 'no rate-limit-log %s' % (w['rate_limit_bum']['minutes'])
+                wcmd = "no rate-limit-log %s" % (
+                    w["rate_limit_bum"]["minutes"]
+                )
                 wcmds.append(wcmd)
 
         if have:
-            if (w.get('rate_limit_bum') or w.get('rate_limit_arp')):
+            if w.get("rate_limit_bum") or w.get("rate_limit_arp"):
                 if "no " in wcmd:
                     if have[""] == []:
                         wcmds = []
                     else:
-                        strg = wcmd.split(' ')[1:]
-                        if ' '.join(strg) not in have[""]:
+                        strg = wcmd.split(" ")[1:]
+                        if " ".join(strg) not in have[""]:
                             wcmds = []
-                elif wcmd in have['']:
+                elif wcmd in have[""]:
                     wcmds = []
 
             else:
@@ -460,14 +556,14 @@ def map_obj_to_commands(updates, module):
                     if hcmds == []:
                         wcmds = []
                     else:
-                        strg = wcmd.split(' ')[1:]
-                        if ' '.join(strg) not in hcmds:
+                        strg = wcmd.split(" ")[1:]
+                        if " ".join(strg) not in hcmds:
                             wcmds = []
                 else:
                     if hcmds:
-                        if(wcmd in hcmds):
+                        if wcmd in hcmds:
                             wcmds = []
-        if(wcmds != []):
+        if wcmds != []:
             [commands.append(i) for i in wcmds]
     return commands
 
@@ -476,24 +572,24 @@ def map_config_to_obj(module):
     config = get_config(module)
     list_interface = dict()
 
-    match = re.findall(r'lag \S+.*?\!', str(config), re.DOTALL)
+    match = re.findall(r"lag \S+.*?\!", str(config), re.DOTALL)
     if match:
         for i in match:
-            split = i.split('\n')
+            split = i.split("\n")
             list_interface[split[0]] = split[1:]
 
-    match = re.findall(r'interface ethernet.*?\!', str(config), re.DOTALL)
+    match = re.findall(r"interface ethernet.*?\!", str(config), re.DOTALL)
     if match:
         for i in match:
-            split = i.split('\n')
+            split = i.split("\n")
             list_interface[split[0]] = split[1:]
 
     list_interface[""] = []
-    match = re.search(r'rate-limit-log \d{1,2}', str(config))
+    match = re.search(r"rate-limit-log \d{1,2}", str(config))
     if match:
         list_interface[""].append(match.group(0))
 
-    match = re.search(r'rate-limit-arp \d{1,2}', str(config))
+    match = re.search(r"rate-limit-arp \d{1,2}", str(config))
     if match:
         list_interface[""].append(match.group(0))
 
@@ -505,11 +601,11 @@ def map_config_to_obj(module):
 
 def map_params_to_obj(module):
     obj = []
-    aggregate = module.params.get('aggregate')
+    aggregate = module.params.get("aggregate")
     if aggregate:
         for item in aggregate:
             for key in item:
-                if key == 'check_running_config' or item.get(key) is None:
+                if key == "check_running_config" or item.get(key) is None:
                     continue
                 temp = dict()
                 temp[key] = item[key]
@@ -518,7 +614,10 @@ def map_params_to_obj(module):
     else:
         for key in module.params:
             temp = dict()
-            if key in ['aggregate', 'check_running_config'] or module.params.get(key) is None:
+            if (
+                key in ["aggregate", "check_running_config"]
+                or module.params.get(key) is None
+            ):
                 continue
             temp[key] = module.params[key]
             obj.append(temp)
@@ -526,61 +625,60 @@ def map_params_to_obj(module):
 
 
 def main():
-    """ main entry point for module execution
-    """
+    """main entry point for module execution"""
 
     input_spec = dict(
-        port=dict(type='str'),
-        lag=dict(type='str'),
-        average_rate=dict(type='int', required=True),
-        burst_size=dict(type='int'),
-        state=dict(default='present', choices=['present', 'absent'])
+        port=dict(type="str"),
+        lag=dict(type="str"),
+        average_rate=dict(type="int", required=True),
+        burst_size=dict(type="int"),
+        state=dict(default="present", choices=["present", "absent"]),
     )
 
     output_spec = dict(
-        port=dict(type='str'),
-        priority_queue=dict(type='int'),
-        value=dict(type='int', required=True),
-        lag=dict(type='str'),
-        state=dict(default='present', choices=['present', 'absent'])
+        port=dict(type="str"),
+        priority_queue=dict(type="int"),
+        value=dict(type="int", required=True),
+        lag=dict(type="str"),
+        state=dict(default="present", choices=["present", "absent"]),
     )
 
     broadcast_spec = dict(
-        port=dict(type='str', required=True),
-        kbps=dict(type='int', required=True),
-        log=dict(type='bool')
+        port=dict(type="str", required=True),
+        kbps=dict(type="int", required=True),
+        log=dict(type="bool"),
     )
 
     unknown_unicast_spec = dict(
-        port=dict(type='str', required=True),
-        kbps=dict(type='int', required=True),
-        log=dict(type='bool')
+        port=dict(type="str", required=True),
+        kbps=dict(type="int", required=True),
+        log=dict(type="bool"),
     )
 
     multicast_spec = dict(
-        port=dict(type='str', required=True),
-        kbps=dict(type='int', required=True),
-        log=dict(type='bool')
+        port=dict(type="str", required=True),
+        kbps=dict(type="int", required=True),
+        log=dict(type="bool"),
     )
 
     arp_spec = dict(
-        number=dict(type='int', required=True),
-        state=dict(default='present', choices=['present', 'absent'])
+        number=dict(type="int", required=True),
+        state=dict(default="present", choices=["present", "absent"]),
     )
 
     bum_spec = dict(
-        minutes=dict(type='int', required=True),
-        state=dict(default='present', choices=['present', 'absent'])
+        minutes=dict(type="int", required=True),
+        state=dict(default="present", choices=["present", "absent"]),
     )
 
     element_spec = dict(
-        rate_limit_input=dict(type='dict', options=input_spec),
-        rate_limit_output=dict(type='dict', options=output_spec),
-        rate_limit_arp=dict(type='dict', options=arp_spec),
-        rate_limit_bum=dict(type='dict', options=bum_spec),
-        broadcast_limit=dict(type='dict', options=broadcast_spec),
-        unknown_unicast_limit=dict(type='dict', options=unknown_unicast_spec),
-        multicast_limit=dict(type='dict', options=multicast_spec)
+        rate_limit_input=dict(type="dict", options=input_spec),
+        rate_limit_output=dict(type="dict", options=output_spec),
+        rate_limit_arp=dict(type="dict", options=arp_spec),
+        rate_limit_bum=dict(type="dict", options=bum_spec),
+        broadcast_limit=dict(type="dict", options=broadcast_spec),
+        unknown_unicast_limit=dict(type="dict", options=unknown_unicast_spec),
+        multicast_limit=dict(type="dict", options=multicast_spec),
     )
 
     aggregate_spec = deepcopy(element_spec)
@@ -588,38 +686,55 @@ def main():
     remove_default_spec(aggregate_spec)
 
     argument_spec = dict(
-        aggregate=dict(type='list', elements='dict', options=aggregate_spec)
+        aggregate=dict(type="list", elements="dict", options=aggregate_spec)
     )
-    element_spec.update(check_running_config=dict(default=False, type='bool',
-                        fallback=(env_fallback, ['ANSIBLE_CHECK_ICX_RUNNING_CONFIG'])))
+    element_spec.update(
+        check_running_config=dict(
+            default=False,
+            type="bool",
+            fallback=(env_fallback, ["ANSIBLE_CHECK_ICX_RUNNING_CONFIG"]),
+        )
+    )
     argument_spec.update(element_spec)
-    required_one_of = [['rate_limit_input', 'rate_limit_output',
-                        'rate_limit_arp', 'rate_limit_bum', 'broadcast_limit',
-                        'unknown_unicast_limit', 'multicast_limit', 'aggregate']]
+    required_one_of = [
+        [
+            "rate_limit_input",
+            "rate_limit_output",
+            "rate_limit_arp",
+            "rate_limit_bum",
+            "broadcast_limit",
+            "unknown_unicast_limit",
+            "multicast_limit",
+            "aggregate",
+        ]
+    ]
 
-    module = AnsibleModule(argument_spec=argument_spec, required_one_of=required_one_of,
-                           supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec,
+        required_one_of=required_one_of,
+        supports_check_mode=True,
+    )
 
     result = {}
-    result['changed'] = False
+    result["changed"] = False
     want = map_params_to_obj(module)
-    result['want'] = want
-    if module.params['check_running_config'] is False:
+    result["want"] = want
+    if module.params["check_running_config"] is False:
         have = []
     else:
         have = map_config_to_obj(module)
-        result['have'] = have
+        result["have"] = have
     commands = map_obj_to_commands((want, have), module)
-    result['commands'] = commands
+    result["commands"] = commands
 
     if commands:
         if not module.check_mode:
             responses = load_config(module, commands)
-            result['changed'] = True
-            result['responses'] = responses
+            result["changed"] = True
+            result["responses"] = responses
 
     module.exit_json(**result)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
