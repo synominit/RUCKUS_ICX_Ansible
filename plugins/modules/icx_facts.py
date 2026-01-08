@@ -185,18 +185,16 @@ class Default(FactsBase):
             self.parse_stacks(data)
 
     def parse_serialnum(self, data, unit):
-        try:
-            match1 = re.search(
-                "UNIT " + unit + ": SL .*?. Software", data, re.DOTALL
-            )
-            if match1:
-                line = match1.group(0)
-                match2 = re.search(r"Serial  #:(\S+)", line)
-                if match2:
-                    serial_num = match2.group(1)
-                    return serial_num
-        except:
-            return ""
+        unit_match = re.search(
+            rf"UNIT {re.escape(unit)}:.*?Serial\s+#:\s*(\S+).*?Software",
+            data,
+            re.DOTALL,
+        )
+        if unit_match:
+            return unit_match.group(1).strip()
+
+        generic_match = re.search(r"Serial\s*#\s*:\s*(\S+)", data)
+        return generic_match.group(1).strip() if generic_match else ""
 
     def parse_version(self, data):
         match = re.search(r"SW: Version ([0-9]+.[0-9]+.[0-9a-zA-Z]+)", data)
