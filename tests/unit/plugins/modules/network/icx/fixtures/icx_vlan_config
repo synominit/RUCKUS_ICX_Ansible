@@ -6,6 +6,7 @@ VLANs Configured :1 3 6 10 21
 
 
 ************* show vlan id**********
+Total PORT-VLAN entries: 10
 Maximum PORT-VLAN entries: 64
 
 Legend: [Stk=Stack-Id, S=Slot]

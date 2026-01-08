@@ -96,6 +96,7 @@ class TestICXModule(ModuleTestCase):
         return result
 
     def changed(self, changed=False):
+
         with self.assertRaises(AnsibleExitJson) as exc:
             self.module.main()
 

@@ -540,7 +540,8 @@ def map_obj_to_commands(updates, module):
 
                 if interfaces:
                     if interfaces["name"]:
-                        for item in interfaces["name"]:
+                        # using dict.fromkeys to ensure user input has no duplicates and ensure order on output
+                        for item in dict.fromkeys(interfaces["name"]):
                             commands.append("untagged {0}".format(item))
                     if interfaces["purge"] is True:
                         want_interfaces = list()
@@ -571,19 +572,25 @@ def map_obj_to_commands(updates, module):
                                 module, vlan_id, "interfaces"
                             )
                         )
-                        remove_interfaces = list(
-                            set(have_interfaces) - set(want_interfaces)
-                        )
+
+                        remove_interfaces = [
+                            x
+                            for x in have_interfaces
+                            if x not in want_interfaces
+                        ]
                         for item in remove_interfaces:
                             commands.append("no untagged {0}".format(item))
 
                 if tagged:
                     if tagged["name"]:
-                        for item in tagged["name"]:
+                        # using dict.fromkeys to ensure user input has no duplicates and ensure order on output
+                        for item in dict.fromkeys(tagged["name"]):
                             commands.append("tagged {0}".format(item))
                     if tagged["purge"] is True:
                         want_tagged = list()
-                        for tag in tagged["name"]:
+                        # set is moved as it is only needed for user inputs,
+                        # ensuring the order of commands for purging
+                        for tag in set(tagged["name"]):
                             low, high = extract_list_from_interface(tag)
                             # result['low'] = low
                             # result['high'] = high
@@ -605,9 +612,10 @@ def map_obj_to_commands(updates, module):
                                 module, vlan_id, "tagged"
                             )
                         )
-                        remove_tagged = list(
-                            set(have_tagged) - set(want_tagged)
-                        )
+                        remove_tagged = [
+                            x for x in have_tagged if x not in want_tagged
+                        ]
+
                         for item in remove_tagged:
                             commands.append("no tagged {0}".format(item))
 
@@ -635,6 +643,7 @@ def map_obj_to_commands(updates, module):
                     )
                 # commands.append('vlan {0}'.format(vlan_id))
 
+            # this might not even be needed?  This was used for the associated_interfaces checks
             if len(commands) == 1 and "vlan " + str(vlan_id) in commands:
                 commands = []
 
@@ -725,6 +734,7 @@ def check_declarative_intent_params(want, module, result):
         ports = [i.strip() for i in ports]
         for interface in interfaces:
             low, high = extract_list_from_interface(interface)
+
             while high >= low:
                 if "ethernet" in interface:
                     if "to" in interface:
@@ -751,8 +761,6 @@ def check_declarative_intent_params(want, module, result):
                 low = low + 1
 
     is_delay = False
-    low = 0
-    high = 0
     for w in want:
         if (
             w.get("associated_interfaces") is None
@@ -786,6 +794,7 @@ def main():
     )
     inter_spec = dict(name=dict(type="list"), purge=dict(type="bool"))
     tagged_spec = dict(name=dict(type="list"), purge=dict(type="bool"))
+
     element_spec = dict(
         vlan_id=dict(type="int"),
         name=dict(),
@@ -828,8 +837,10 @@ def main():
     result["changed"] = False
     if warnings:
         result["warnings"] = warnings
+
     exec_command(module, "skip")
     want = map_params_to_obj(module)
+
     result["want"] = want
     if module.params["check_running_config"] is False:
         have = []
@@ -837,6 +848,7 @@ def main():
         have = map_config_to_obj(module)
     result["have"] = have
     commands = map_obj_to_commands((want, have), module)
+
     result["commands"] = commands
 
     if commands:
@@ -845,7 +857,13 @@ def main():
             if output:
                 check_fail(module, output)
             result["output"] = output
-        result["changed"] = True
+        # this is causing the result to change on checking associated interfaces or tagged
+        # temporarily adjusting it so that it only considers this when these params are not present
+        # since the check_declarative_intent_params will itself raise an error
+        if not module.params.get(
+            "associated_tagged"
+        ) and not module.params.get("associated_interfaces"):
+            result["changed"] = True
 
     check_declarative_intent_params(want, module, result)
 
