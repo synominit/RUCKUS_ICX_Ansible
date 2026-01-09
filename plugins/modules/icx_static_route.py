@@ -87,22 +87,22 @@ options:
 
 EXAMPLES = """
 - name: Configure static route
-  community.network.icx_static_route:
+  synominit.icx.icx_static_route:
     prefix: 192.168.2.0/24
     next_hop: 10.0.0.1
 - name: Remove configuration
-  community.network.icx_static_route:
+  synominit.icx.icx_static_route:
     prefix: 192.168.2.0
     mask: 255.255.255.0
     next_hop: 10.0.0.1
     state: absent
 - name: Add static route aggregates
-  community.network.icx_static_route:
+  synominit.icx.icx_static_route:
     aggregate:
       - { prefix: 172.16.32.0, mask: 255.255.255.0, next_hop: 10.0.0.8 }
       - { prefix: 172.16.33.0, mask: 255.255.255.0, next_hop: 10.0.0.8 }
 - name: Remove static route aggregates
-  community.network.icx_static_route:
+  synominit.icx.icx_static_route:
     aggregate:
       - { prefix: 172.16.32.0, mask: 255.255.255.0, next_hop: 10.0.0.8 }
       - { prefix: 172.16.33.0, mask: 255.255.255.0, next_hop: 10.0.0.8 }
@@ -128,7 +128,7 @@ from ansible.module_utils.connection import ConnectionError
 from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import (
     remove_default_spec,
 )
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+from ansible_collections.synominit.icx.plugins.module_utils.network.icx.icx import (
     get_config,
     load_config,
 )

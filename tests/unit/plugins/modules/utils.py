@@ -6,8 +6,8 @@ import json
 
 from ansible.module_utils import basic
 from ansible.module_utils.common.text.converters import to_bytes
-from ansible_collections.commscope.icx.tests.unit.compat import unittest
-from ansible_collections.commscope.icx.tests.unit.compat.mock import patch
+from ansible_collections.synominit.icx.tests.unit.compat import unittest
+from ansible_collections.synominit.icx.tests.unit.compat.mock import patch
 
 cur_context = None
 

@@ -138,19 +138,19 @@ options:
 
 EXAMPLES = """
 - name: Create a new user without password
-  community.network.icx_user:
+  synominit.icx.icx_user:
     name: user1
     nopassword: true
 - name: Create a new user with password
-  community.network.icx_user:
+  synominit.icx.icx_user:
     name: user1
     configured_password: 'newpassword'
 - name: Remove users
-  community.network.icx_user:
+  synominit.icx.icx_user:
     name: user1
     state: absent
 - name: Set user privilege level to 5
-  community.network.icx_user:
+  synominit.icx.icx_user:
     name: user1
     privilege: 5
 """
@@ -180,7 +180,7 @@ from ansible.module_utils.six import iteritems
 from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import (
     remove_default_spec,
 )
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+from ansible_collections.synominit.icx.plugins.module_utils.network.icx.icx import (
     get_config,
     load_config,
 )

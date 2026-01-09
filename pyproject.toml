@@ -1,6 +1,6 @@
 [project]
 name = "rukus-icx-ansible"
-version = "0.1.0"
+
 description = "dependencies for developing/fixing ruckus icx modules"
 license = {text = "GPLv3"}
 readme = "README.md"
@@ -12,7 +12,9 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
+version = "3.0.0"
 package-mode = false
+
 [dependency-groups]
 dev = [
     "ansible (>=13.2.0,<14.0.0)",
@@ -23,6 +25,13 @@ dev = [
     "pyyaml (>=6.0.3,<7.0.0)",
     "pytest-cov (>=7.0.0,<8.0.0)"
 ]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_scheme = "pep440"
+version_provider = "poetry"
+update_changelog_on_bump = true
 
 
 [tool.bandit]

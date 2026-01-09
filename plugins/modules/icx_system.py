@@ -104,14 +104,14 @@ options:
 
 EXAMPLES = """
 - name: Configure hostname and domain name
-  community.network.icx_system:
+  synominit.icx.icx_system:
     hostname: icx
     domain_search:
       - ansible.com
       - redhat.com
       - ruckus.com
 - name: Configure radius server of type auth-port
-  community.network.icx_system:
+  synominit.icx.icx_system:
     aaa_servers:
       - type: radius
         hostname: radius-server
@@ -124,7 +124,7 @@ EXAMPLES = """
           - dot1x
           - mac-auth
 - name: Configure tacacs server
-  community.network.icx_system:
+  synominit.icx.icx_system:
     aaa_servers:
       - type: tacacs
         hostname: tacacs-server
@@ -134,7 +134,7 @@ EXAMPLES = """
         acct_type: accounting-only
         auth_key: xyz
 - name: Configure name servers
-  community.network.icx_system:
+  synominit.icx.icx_system:
     name_servers:
       - 8.8.8.8
       - 8.8.4.4
@@ -166,7 +166,7 @@ from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.u
     ComplexList,
     validate_ip_v6_address,
 )
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+from ansible_collections.synominit.icx.plugins.module_utils.network.icx.icx import (
     get_config,
     load_config,
 )

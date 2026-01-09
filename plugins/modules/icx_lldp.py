@@ -47,13 +47,13 @@ options:
 
 EXAMPLES = """
 - name: Disable LLDP
-  community.network.icx_lldp:
+  synominit.icx.icx_lldp:
     state: absent
 - name: Enable LLDP
-  community.network.icx_lldp:
+  synominit.icx.icx_lldp:
     state: present
 - name: Disable LLDP on ports 1/1/1 - 1/1/10, 1/1/20
-  community.network.icx_lldp:
+  synominit.icx.icx_lldp:
     interfaces:
      - name:
         - ethernet 1/1/1 to 1/1/10
@@ -61,7 +61,7 @@ EXAMPLES = """
        state: absent
     state: present
 - name: Enable LLDP on ports 1/1/5 - 1/1/10
-  community.network.icx_lldp:
+  synominit.icx.icx_lldp:
     interfaces:
       - name:
         - ethernet 1/1/1 to 1/1/10
@@ -78,7 +78,7 @@ commands:
 """
 
 from ansible.module_utils.basic import AnsibleModule, env_fallback
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+from ansible_collections.synominit.icx.plugins.module_utils.network.icx.icx import (
     load_config,
     run_commands,
 )

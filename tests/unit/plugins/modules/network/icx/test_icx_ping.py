@@ -4,9 +4,9 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-from ansible_collections.commscope.icx.plugins.modules import icx_ping
-from ansible_collections.commscope.icx.tests.unit.compat.mock import patch
-from ansible_collections.commscope.icx.tests.unit.plugins.modules.utils import (
+from ansible_collections.synominit.icx.plugins.modules import icx_ping
+from ansible_collections.synominit.icx.tests.unit.compat.mock import patch
+from ansible_collections.synominit.icx.tests.unit.plugins.modules.utils import (
     set_module_args,
 )
 
@@ -21,7 +21,7 @@ class TestICXPingModule(TestICXModule):
     def setUp(self):
         super(TestICXPingModule, self).setUp()
         self.mock_run_commands = patch(
-            "ansible_collections.commscope.icx.plugins.modules.icx_ping.run_commands"
+            "ansible_collections.synominit.icx.plugins.modules.icx_ping.run_commands"
         )
         self.run_commands = self.mock_run_commands.start()
 

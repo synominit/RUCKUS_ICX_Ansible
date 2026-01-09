@@ -1,26 +1,37 @@
 # See https://docs.ansible.com/ansible/latest/dev_guide/collections_galaxy_meta.html
-namespace: commscope
+namespace: synominit
 name: icx
-version: 1.0.4
+version: 2.0.0
 readme: README.md
 authors:
   - Commscope
-description: Ansible Network Collection for Commscope ICX devices.
+  - David Pham
+description: Ansible Network Collection for Commscope ICX devices, forked and updated due to no action on the original repo.
 license_file: LICENSE
 tags:
-# tags so people can search for collections https://galaxy.ansible.com/search
-# tags are all lower-case, no spaces, no dashes.
+  # tags so people can search for collections https://galaxy.ansible.com/search
+  # tags are all lower-case, no spaces, no dashes.
   - commscope
   - icx
   - ruckus
   - networking
 dependencies:
   "ansible.netcommon": ">=1.0.0"
-repository: https://github.com/commscope-ruckus/commscope.icx
+repository: https://github.com/synominit/RUCKUS_ICX_Ansible
 #documentation: https://github.com/ansible-collection-migration/community.REPO_NAME/tree/main/docs
-homepage: https://www.commscope.com/
-issues: https://github.com/commscope-ruckus/commscope.icx/issues
+homepage: https://github.com/synominit/RUCKUS_ICX_Ansible
+issues: https://github.com/synominit/RUCKUS_ICX_Ansible/issues
 build_ignore:
-# https://docs.ansible.com/ansible/devel/dev_guide/developing_collections.html#ignoring-files-and-folders
+  # https://docs.ansible.com/ansible/devel/dev_guide/developing_collections.html#ignoring-files-and-folders
   - .gitignore
   - changelogs/.plugin-cache.yaml
+  - tests
+  - htmlcov
+  - .venv
+  - temp
+  - .pytest_cache
+  - .github
+  - poetry.lock
+  - .ruff_cache
+  - .coverage
+  - "*.tar.gz"
