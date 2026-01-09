@@ -3,10 +3,11 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: icx_static_route
 author: "Ruckus Wireless (@Commscope)"
@@ -82,7 +83,7 @@ options:
        Module will use environment variable value(default:False), unless it is overridden, by specifying it as module parameter.
     type: bool
     default: no
-'''
+"""
 
 EXAMPLES = """
 - name: Configure static route
@@ -118,17 +119,23 @@ commands:
 """
 
 
-from copy import deepcopy
 import re
+from copy import deepcopy
 
 from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import AnsibleModule, env_fallback
 from ansible.module_utils.connection import ConnectionError
-from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import remove_default_spec
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import get_config, load_config
+from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import (
+    remove_default_spec,
+)
+from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+    get_config,
+    load_config,
+)
 
 try:
     from ipaddress import ip_network
+
     HAS_IPADDRESS = True
 except ImportError:
     HAS_IPADDRESS = False
@@ -136,14 +143,14 @@ except ImportError:
 
 def map_obj_to_commands(want, have, module):
     commands = list()
-    purge = module.params['purge']
+    purge = module.params["purge"]
     """
     We are deleting state & check_running_config fields so that want can be compared with have.
     Have has only 4 fields. Also that routes are considered different if address/mask/hop is different.
     """
     for w in want:
         for h in have:
-            for key in ['prefix', 'mask', 'next_hop']:
+            for key in ["prefix", "mask", "next_hop"]:
                 if w[key] != h[key]:
                     break
             else:
@@ -151,37 +158,43 @@ def map_obj_to_commands(want, have, module):
         else:
             h = None
 
-        prefix = w['prefix']
-        mask = w['mask']
-        next_hop = w['next_hop']
-        admin_distance = w.get('admin_distance')
+        prefix = w["prefix"]
+        mask = w["mask"]
+        next_hop = w["next_hop"]
+        admin_distance = w.get("admin_distance")
         if not admin_distance and h:
-            w['admin_distance'] = admin_distance = h['admin_distance']
-        state = w['state']
-        del w['state']
-        if 'check_running_config' in w.keys():
-            del w['check_running_config']
-        if state == 'absent' and have == []:
-            commands.append('no ip route %s %s %s' % (prefix, mask, next_hop))
+            w["admin_distance"] = admin_distance = h["admin_distance"]
+        state = w["state"]
+        del w["state"]
+        if "check_running_config" in w.keys():
+            del w["check_running_config"]
+        if state == "absent" and have == []:
+            commands.append("no ip route %s %s %s" % (prefix, mask, next_hop))
 
-        if state == 'absent' and w in have:
-            commands.append('no ip route %s %s %s' % (prefix, mask, next_hop))
-        elif state == 'present' and w not in have:
+        if state == "absent" and w in have:
+            commands.append("no ip route %s %s %s" % (prefix, mask, next_hop))
+        elif state == "present" and w not in have:
             if admin_distance:
-                commands.append('ip route %s %s %s distance %s' % (prefix, mask, next_hop, admin_distance))
+                commands.append(
+                    "ip route %s %s %s distance %s"
+                    % (prefix, mask, next_hop, admin_distance)
+                )
             else:
-                commands.append('ip route %s %s %s' % (prefix, mask, next_hop))
+                commands.append("ip route %s %s %s" % (prefix, mask, next_hop))
     if purge:
         for h in have:
             if h not in want:
-                commands.append('no ip route %s %s %s' % (h['prefix'], h['mask'], h['next_hop']))
+                commands.append(
+                    "no ip route %s %s %s"
+                    % (h["prefix"], h["mask"], h["next_hop"])
+                )
     return commands
 
 
 def map_config_to_obj(module):
     obj = []
     # compare = module.params['check_running_config']
-    out = get_config(module, flags='| include ip route')
+    out = get_config(module, flags="| include ip route")
 
     for line in out.splitlines():
         splitted_line = line.split()
@@ -194,20 +207,24 @@ def map_config_to_obj(module):
         if len(splitted_line) == 6:
             admin_distance = splitted_line[5]
         else:
-            admin_distance = '1'
+            admin_distance = "1"
 
-        obj.append({
-            'prefix': prefix, 'mask': mask, 'next_hop': next_hop,
-            'admin_distance': admin_distance
-        })
+        obj.append(
+            {
+                "prefix": prefix,
+                "mask": mask,
+                "next_hop": next_hop,
+                "admin_distance": admin_distance,
+            }
+        )
 
     return obj
 
 
 def prefix_length_parser(prefix, mask, module):
-    if '/' in prefix and mask is not None:
-        module.fail_json(msg='Ambigous, specifed both length and mask')
-    if '/' in prefix:
+    if "/" in prefix and mask is not None:
+        module.fail_json(msg="Ambigous, specifed both length and mask")
+    if "/" in prefix:
         cidr = ip_network(to_text(prefix))
         prefix = str(cidr.network_address)
         mask = str(cidr.netmask)
@@ -215,10 +232,10 @@ def prefix_length_parser(prefix, mask, module):
 
 
 def map_params_to_obj(module, required_together=None):
-    keys = ['prefix', 'mask', 'next_hop', 'admin_distance', 'state']
+    keys = ["prefix", "mask", "next_hop", "admin_distance", "state"]
     obj = []
 
-    aggregate = module.params.get('aggregate')
+    aggregate = module.params.get("aggregate")
     if aggregate:
         for item in aggregate:
             route = item.copy()
@@ -228,88 +245,107 @@ def map_params_to_obj(module, required_together=None):
 
             # module._check_required_together(required_together, route)
 
-            prefix, mask = prefix_length_parser(route['prefix'], route['mask'], module)
-            route.update({'prefix': prefix, 'mask': mask})
+            prefix, mask = prefix_length_parser(
+                route["prefix"], route["mask"], module
+            )
+            route.update({"prefix": prefix, "mask": mask})
 
             obj.append(route)
     else:
         # module._check_required_together(required_together, module.params)
-        prefix, mask = prefix_length_parser(module.params['prefix'], module.params['mask'], module)
+        prefix, mask = prefix_length_parser(
+            module.params["prefix"], module.params["mask"], module
+        )
 
-        obj.append({
-            'prefix': prefix,
-            'mask': mask,
-            'next_hop': module.params['next_hop'].strip(),
-            'admin_distance': module.params.get('admin_distance'),
-            'state': module.params['state'],
-        })
+        obj.append(
+            {
+                "prefix": prefix,
+                "mask": mask,
+                "next_hop": module.params["next_hop"].strip(),
+                "admin_distance": module.params.get("admin_distance"),
+                "state": module.params["state"],
+            }
+        )
 
     for route in obj:
-        if route['admin_distance']:
-            route['admin_distance'] = str(route['admin_distance'])
+        if route["admin_distance"]:
+            route["admin_distance"] = str(route["admin_distance"])
 
     return obj
 
 
 def main():
-    """ main entry point for module execution
-    """
+    """main entry point for module execution"""
     element_spec = dict(
-        prefix=dict(type='str'),
-        mask=dict(type='str'),
-        next_hop=dict(type='str'),
-        admin_distance=dict(type='int'),
-        state=dict(default='present', choices=['present', 'absent']),
-        check_running_config=dict(default=False, type='bool', fallback=(env_fallback, ['ANSIBLE_CHECK_ICX_RUNNING_CONFIG']))
+        prefix=dict(type="str"),
+        mask=dict(type="str"),
+        next_hop=dict(type="str"),
+        admin_distance=dict(type="int"),
+        state=dict(default="present", choices=["present", "absent"]),
+        check_running_config=dict(
+            default=False,
+            type="bool",
+            fallback=(env_fallback, ["ANSIBLE_CHECK_ICX_RUNNING_CONFIG"]),
+        ),
     )
 
-    required_one_of = [['aggregate', 'prefix']]
-    required_together = [['prefix', 'next_hop']]
-    mutually_exclusive = [['aggregate', 'prefix']]
+    required_one_of = [["aggregate", "prefix"]]
+    required_together = [["prefix", "next_hop"]]
+    mutually_exclusive = [["aggregate", "prefix"]]
 
     aggregate_spec = deepcopy(element_spec)
-    aggregate_spec['prefix'] = dict(required=True)
+    aggregate_spec["prefix"] = dict(required=True)
 
     remove_default_spec(aggregate_spec)
 
     argument_spec = dict(
-        aggregate=dict(type='list', elements='dict', options=aggregate_spec, required_together=required_together),
-        purge=dict(default=False, type='bool')
+        aggregate=dict(
+            type="list",
+            elements="dict",
+            options=aggregate_spec,
+            required_together=required_together,
+        ),
+        purge=dict(default=False, type="bool"),
     )
 
     argument_spec.update(element_spec)
 
-    module = AnsibleModule(argument_spec=argument_spec,
-                           required_one_of=required_one_of,
-                           required_together=required_together,
-                           mutually_exclusive=mutually_exclusive,
-                           supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec,
+        required_one_of=required_one_of,
+        required_together=required_together,
+        mutually_exclusive=mutually_exclusive,
+        supports_check_mode=True,
+    )
 
     if not HAS_IPADDRESS:
         module.fail_json(msg="ipaddress python package is required")
 
     warnings = list()
 
-    result = {'changed': False}
+    result = {"changed": False}
     if warnings:
-        result['warnings'] = warnings
+        result["warnings"] = warnings
 
     want = map_params_to_obj(module)
     have = []
-    if module.params['check_running_config'] is True or module.params['purge'] is True:
+    if (
+        module.params["check_running_config"] is True
+        or module.params["purge"] is True
+    ):
         have = map_config_to_obj(module)
 
     commands = map_obj_to_commands(want, have, module)
-    result['commands'] = commands
+    result["commands"] = commands
 
     if commands:
         if not module.check_mode:
             load_config(module, commands)
 
-        result['changed'] = True
+        result["changed"] = True
 
     module.exit_json(**result)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

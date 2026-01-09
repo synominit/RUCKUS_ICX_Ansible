@@ -87,7 +87,7 @@ The following example task replaces configuration changes in the existing config
 
 ## Contributing to this collection
 
-If you find problems, please open an issue against the [Commscope ICX collection repository](https://github.com/commscope-ruckus/commscope.icx). 
+If you find problems, please open an issue against the [Commscope ICX collection repository](https://github.com/commscope-ruckus/commscope.icx).
 
 See the [Ansible Community Guide](https://docs.ansible.com/ansible/latest/community/index.html) for details on contributing to Ansible.
 

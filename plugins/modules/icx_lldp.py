@@ -3,10 +3,11 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: icx_lldp
 author: "Ruckus Wireless (@Commscope)"
@@ -42,7 +43,7 @@ options:
       - Enables the receipt and transmission of Link Layer Discovery Protocol (LLDP) globally.
     type: str
     choices: ['present', 'absent', 'enabled', 'disabled']
-'''
+"""
 
 EXAMPLES = """
 - name: Disable LLDP
@@ -77,12 +78,15 @@ commands:
 """
 
 from ansible.module_utils.basic import AnsibleModule, env_fallback
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import load_config, run_commands
+from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+    load_config,
+    run_commands,
+)
 
 
 def has_lldp(module):
     # run_commands(module, ['skip'])
-    output = run_commands(module, ['show lldp'])
+    output = run_commands(module, ["show lldp"])
     is_lldp_enable = False
     if len(output) > 0 and "LLDP is not running" not in output[0]:
         is_lldp_enable = True
@@ -91,70 +95,74 @@ def has_lldp(module):
 
 
 def map_obj_to_commands(module, commands):
-    interfaces = module.params.get('interfaces')
+    interfaces = module.params.get("interfaces")
     for item in interfaces:
-        state = item.get('state')
-        if state == 'present':
-            for port in item.get('name'):
-                if 'all' in port:
-                    module.fail_json(msg='cannot enable on all the ports')
+        state = item.get("state")
+        if state == "present":
+            for port in item.get("name"):
+                if "all" in port:
+                    module.fail_json(msg="cannot enable on all the ports")
                 else:
-                    commands.append('lldp enable ports {0}'.format(str(port)))
-        elif state == 'absent':
-            for port in item.get('name'):
-                if 'all' in port:
-                    module.fail_json(msg='cannot enable on all the ports')
+                    commands.append("lldp enable ports {0}".format(str(port)))
+        elif state == "absent":
+            for port in item.get("name"):
+                if "all" in port:
+                    module.fail_json(msg="cannot enable on all the ports")
                 else:
-                    commands.append('no lldp enable ports {0}'.format(str(port)))
+                    commands.append(
+                        "no lldp enable ports {0}".format(str(port))
+                    )
 
 
 def main():
-    """ main entry point for module execution
-    """
+    """main entry point for module execution"""
     interfaces_spec = dict(
-        name=dict(type='list'),
-        state=dict(choices=['present', 'absent',
-                            'enabled', 'disabled'])
+        name=dict(type="list"),
+        state=dict(choices=["present", "absent", "enabled", "disabled"]),
     )
 
     argument_spec = dict(
-        interfaces=dict(type='list', elements='dict', options=interfaces_spec),
-        state=dict(choices=['present', 'absent',
-                            'enabled', 'disabled']),
-        check_running_config=dict(default=False, type='bool', fallback=(env_fallback, ['ANSIBLE_CHECK_ICX_RUNNING_CONFIG']))
+        interfaces=dict(type="list", elements="dict", options=interfaces_spec),
+        state=dict(choices=["present", "absent", "enabled", "disabled"]),
+        check_running_config=dict(
+            default=False,
+            type="bool",
+            fallback=(env_fallback, ["ANSIBLE_CHECK_ICX_RUNNING_CONFIG"]),
+        ),
     )
 
-    module = AnsibleModule(argument_spec=argument_spec,
-                           supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
+    )
 
     warnings = list()
 
-    result = {'changed': False}
+    result = {"changed": False}
 
     if warnings:
-        result['warnings'] = warnings
+        result["warnings"] = warnings
 
     commands = []
-    state = module.params['state']
+    state = module.params["state"]
 
-    if state == 'absent':
-        commands.append('no lldp run')
-    elif state == 'present':
-        commands.append('lldp run')
+    if state == "absent":
+        commands.append("no lldp run")
+    elif state == "present":
+        commands.append("lldp run")
 
-    if module.params.get('interfaces'):
+    if module.params.get("interfaces"):
         map_obj_to_commands(module, commands)
 
-    result['commands'] = commands
+    result["commands"] = commands
 
     if commands:
         if not module.check_mode:
             load_config(module, commands)
 
-        result['changed'] = True
+        result["changed"] = True
 
     module.exit_json(**result)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

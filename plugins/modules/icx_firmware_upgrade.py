@@ -3,6 +3,7 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
@@ -102,76 +103,103 @@ changed:
   type: bool
 """
 
-from copy import deepcopy
 import re
+from copy import deepcopy
 
 from ansible.module_utils._text import to_text
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import run_commands, exec_scp
 from ansible.module_utils.basic import AnsibleModule, env_fallback
 from ansible.module_utils.connection import ConnectionError
-from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import remove_default_spec
+from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import (
+    remove_default_spec,
+)
+from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+    exec_scp,
+    run_commands,
+)
 
 
 def map_params_to_obj(module):
     commands = dict()
-    command = ''
+    command = ""
     res_commands = []
-    server_type = module.params['server_type']
-    server_address = module.params['server_address']
-    server_port = module.params['server_port']
-    filename = module.params['filename']
-    partition = module.params['partition']
-    if partition in ['fips-ufi-primary-sig', 'fips-ufi-secondary-sig']:
-        boot_partition = partition.split('-')[2]
+    server_type = module.params["server_type"]
+    server_address = module.params["server_address"]
+    server_port = module.params["server_port"]
+    filename = module.params["filename"]
+    partition = module.params["partition"]
+    if partition in ["fips-ufi-primary-sig", "fips-ufi-secondary-sig"]:
+        boot_partition = partition.split("-")[2]
     else:
         boot_partition = partition
-    boot_only = module.params['boot_only']
-    save_running_config = module.params['save_running_config']
+    boot_only = module.params["boot_only"]
+    save_running_config = module.params["save_running_config"]
     if not boot_only:
-        if server_type == 'tftp':
-            command = 'copy tftp flash %s %s %s' % (server_address, filename, partition)
-            commands['command'] = command
+        if server_type == "tftp":
+            command = "copy tftp flash %s %s %s" % (
+                server_address,
+                filename,
+                partition,
+            )
+            commands["command"] = command
 
-        elif server_type == 'scp':
+        elif server_type == "scp":
             if server_port:
-                command = 'copy scp flash %s %d %s %s' % (server_address, server_port, filename, partition)
+                command = "copy scp flash %s %d %s %s" % (
+                    server_address,
+                    server_port,
+                    filename,
+                    partition,
+                )
             else:
-                command = 'copy scp flash %s %s %s' % (server_address, filename, partition)
-            commands['command'] = command
-            commands['scp_user'] = module.params['scp_user']
-            commands['scp_pass'] = module.params['scp_pass']
+                command = "copy scp flash %s %s %s" % (
+                    server_address,
+                    filename,
+                    partition,
+                )
+            commands["command"] = command
+            commands["scp_user"] = module.params["scp_user"]
+            commands["scp_pass"] = module.params["scp_pass"]
 
-        elif server_type == 'https':
+        elif server_type == "https":
             if server_port:
-                command = 'copy https flash %s %s %s port %d' % (server_address, filename, partition, server_port)
+                command = "copy https flash %s %s %s port %d" % (
+                    server_address,
+                    filename,
+                    partition,
+                    server_port,
+                )
             else:
-                command = 'copy https flash %s %s %s' % (server_address, filename, partition)
+                command = "copy https flash %s %s %s" % (
+                    server_address,
+                    filename,
+                    partition,
+                )
 
-            commands['command'] = command
+            commands["command"] = command
         res_commands.append(commands)
         if save_running_config:
-            res_commands.append('write memory')
-            res_commands.append('boot system flash %s yes' % (boot_partition))
+            res_commands.append("write memory")
+            res_commands.append("boot system flash %s yes" % (boot_partition))
         else:
-            res_commands.append('boot system flash %s yes' % (boot_partition))
+            res_commands.append("boot system flash %s yes" % (boot_partition))
     else:
         if save_running_config:
-            res_commands.append('write memory')
-            res_commands.append('boot system flash %s yes' % (boot_partition))
+            res_commands.append("write memory")
+            res_commands.append("boot system flash %s yes" % (boot_partition))
         else:
-            res_commands.append('boot system flash %s yes' % (boot_partition))
+            res_commands.append("boot system flash %s yes" % (boot_partition))
 
     return res_commands
 
 
 def checkValidations(module):
-    server_type = module.params['server_type']
-    server_address = module.params['server_address']
+    server_type = module.params["server_type"]
+    server_address = module.params["server_address"]
     # server_port = module.params['server_port']
-    filename = module.params['filename']
-    boot_only = module.params['boot_only']
-    scp_user = module.params['scp_user']
-    scp_pass = module.params['scp_pass']
+    filename = module.params["filename"]
+    boot_only = module.params["boot_only"]
+    scp_user = module.params["scp_user"]
+    scp_pass = module.params["scp_pass"]
 
     if not boot_only:
         if server_type is None:
@@ -180,7 +208,7 @@ def checkValidations(module):
             module.fail_json(msg="server_address is required")
         if filename is None:
             module.fail_json(msg="filename is required")
-        if server_type == 'scp':
+        if server_type == "scp":
             if scp_user is None:
                 module.fail_json(msg="scp_user is required")
             if scp_pass is None:
@@ -188,51 +216,65 @@ def checkValidations(module):
 
 
 def main():
-    """ main entry point for module execution
-    """
+    """main entry point for module execution"""
     argument_spec = dict(
-        server_type=dict(type='str', choices=['scp', 'https', 'tftp'], required=False),
-        server_address=dict(type='str', required=False),
-        server_port=dict(type='int'),
-        partition=dict(type='str', choices=['primary', 'secondary', 'fips-ufi-primary-sig',
-                                            'fips-ufi-secondary-sig'], required=True),
-        filename=dict(type='str', required=False),
-        boot_only=dict(type='bool', required=True),
-        save_running_config=dict(type='bool'),
-        scp_user=dict(type='str', required=False),
-        scp_pass=dict(type='str', required=False, no_log=True),
+        server_type=dict(
+            type="str", choices=["scp", "https", "tftp"], required=False
+        ),
+        server_address=dict(type="str", required=False),
+        server_port=dict(type="int"),
+        partition=dict(
+            type="str",
+            choices=[
+                "primary",
+                "secondary",
+                "fips-ufi-primary-sig",
+                "fips-ufi-secondary-sig",
+            ],
+            required=True,
+        ),
+        filename=dict(type="str", required=False),
+        boot_only=dict(type="bool", required=True),
+        save_running_config=dict(type="bool"),
+        scp_user=dict(type="str", required=False),
+        scp_pass=dict(type="str", required=False, no_log=True),
     )
 
-    module = AnsibleModule(argument_spec=argument_spec,
-                           supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
+    )
     checkValidations(module)
-    result = {'changed': False}
+    result = {"changed": False}
 
     commands = map_params_to_obj(module)
 
-    if module.params['save_running_config']:
-        if module.params['boot_only']:
-            result['commands'] = [commands[0], commands[1]]
+    if module.params["save_running_config"]:
+        if module.params["boot_only"]:
+            result["commands"] = [commands[0], commands[1]]
         else:
-            result['commands'] = [commands[0]['command'], commands[1], commands[2]]
+            result["commands"] = [
+                commands[0]["command"],
+                commands[1],
+                commands[2],
+            ]
     else:
-        if module.params['boot_only']:
-            result['commands'] = [commands[0]]
+        if module.params["boot_only"]:
+            result["commands"] = [commands[0]]
         else:
-            result['commands'] = [commands[0]['command'], commands[1]]
+            result["commands"] = [commands[0]["command"], commands[1]]
 
     if commands:
         if not module.check_mode:
-            if module.params['server_type'] == 'scp':
+            if module.params["server_type"] == "scp":
                 responses = exec_scp(module, commands[0])
                 responses = run_commands(module, commands[1:])
             else:
                 responses = run_commands(module, commands)
-        result['changed'] = True
-        result['responses'] = responses
+        result["changed"] = True
+        result["responses"] = responses
 
     module.exit_json(**result)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

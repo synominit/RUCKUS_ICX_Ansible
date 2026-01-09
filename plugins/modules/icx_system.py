@@ -3,10 +3,11 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: icx_system
 author: "Ruckus Wireless (@Commscope)"
@@ -99,7 +100,7 @@ options:
        Module will use environment variable value(default:False), unless it is overridden, by specifying it as module parameter.
     type: bool
     default: no
-'''
+"""
 
 EXAMPLES = """
 - name: Configure hostname and domain name
@@ -154,10 +155,21 @@ commands:
 
 import re
 from copy import deepcopy
+
 from ansible.module_utils.basic import AnsibleModule, env_fallback
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import get_config, load_config
-from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import ComplexList, validate_ip_v6_address
-from ansible.module_utils.connection import Connection, ConnectionError, exec_command
+from ansible.module_utils.connection import (
+    Connection,
+    ConnectionError,
+    exec_command,
+)
+from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import (
+    ComplexList,
+    validate_ip_v6_address,
+)
+from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+    get_config,
+    load_config,
+)
 
 
 def diff_list(want, have):
@@ -168,132 +180,185 @@ def diff_list(want, have):
 
 def map_obj_to_commands(want, have, module):
     commands = list()
-    state = module.params['state']
+    state = module.params["state"]
 
     def needs_update(x):
         return want.get(x) is not None and (want.get(x) != have.get(x))
 
-    if state == 'absent':
-        if have['name_servers'] == [] and have['aaa_servers'] == [] and have['domain_search'] == [] and have['hostname'] is None:
-            if want['hostname']:
-                commands.append('no hostname')
+    if state == "absent":
+        if (
+            have["name_servers"] == []
+            and have["aaa_servers"] == []
+            and have["domain_search"] == []
+            and have["hostname"] is None
+        ):
+            if want["hostname"]:
+                commands.append("no hostname")
 
-            if want['domain_search']:
-                for item in want['domain_search']:
-                    commands.append('no ip dns domain-list %s' % item)
+            if want["domain_search"]:
+                for item in want["domain_search"]:
+                    commands.append("no ip dns domain-list %s" % item)
 
-            if want['name_servers']:
-                for item in want['name_servers']:
-                    commands.append('no ip dns server-address %s' % item)
+            if want["name_servers"]:
+                for item in want["name_servers"]:
+                    commands.append("no ip dns server-address %s" % item)
 
-            if want['aaa_servers']:
+            if want["aaa_servers"]:
                 want_servers = []
-                want_server = want['aaa_servers']
+                want_server = want["aaa_servers"]
                 if want_server:
                     want_list = deepcopy(want_server)
                     for items in want_list:
-                        items['auth_key'] = None
+                        items["auth_key"] = None
                         want_servers.append(items)
                 for item in want_servers:
-                    ipv6addr = validate_ip_v6_address(item['hostname'])
+                    ipv6addr = validate_ip_v6_address(item["hostname"])
                     if ipv6addr:
-                        commands.append('no ' + item['type'] + '-server host ipv6 ' + item['hostname'])
+                        commands.append(
+                            "no "
+                            + item["type"]
+                            + "-server host ipv6 "
+                            + item["hostname"]
+                        )
                     else:
-                        commands.append('no ' + item['type'] + '-server host ' + item['hostname'])
+                        commands.append(
+                            "no "
+                            + item["type"]
+                            + "-server host "
+                            + item["hostname"]
+                        )
 
-        if want['hostname']:
-            if have['hostname'] == want['hostname']:
-                commands.append('no hostname')
+        if want["hostname"]:
+            if have["hostname"] == want["hostname"]:
+                commands.append("no hostname")
 
-        if want['domain_search']:
-            for item in want['domain_search']:
-                if item in have['domain_search']:
-                    commands.append('no ip dns domain-list %s' % item)
+        if want["domain_search"]:
+            for item in want["domain_search"]:
+                if item in have["domain_search"]:
+                    commands.append("no ip dns domain-list %s" % item)
 
-        if want['name_servers']:
-            for item in want['name_servers']:
-                if item in have['name_servers']:
-                    commands.append('no ip dns server-address %s' % item)
+        if want["name_servers"]:
+            for item in want["name_servers"]:
+                if item in have["name_servers"]:
+                    commands.append("no ip dns server-address %s" % item)
 
-        if want['aaa_servers']:
+        if want["aaa_servers"]:
             want_servers = []
-            want_server = want['aaa_servers']
-            have_server = have['aaa_servers']
+            want_server = want["aaa_servers"]
+            have_server = have["aaa_servers"]
             if want_server:
                 want_list = deepcopy(want_server)
                 for items in want_list:
-                    items['auth_key'] = None
+                    items["auth_key"] = None
                     want_servers.append(items)
             for item in want_servers:
                 if item in have_server:
-                    ipv6addr = validate_ip_v6_address(item['hostname'])
+                    ipv6addr = validate_ip_v6_address(item["hostname"])
                     if ipv6addr:
-                        commands.append('no ' + item['type'] + '-server host ipv6 ' + item['hostname'])
+                        commands.append(
+                            "no "
+                            + item["type"]
+                            + "-server host ipv6 "
+                            + item["hostname"]
+                        )
                     else:
-                        commands.append('no ' + item['type'] + '-server host ' + item['hostname'])
+                        commands.append(
+                            "no "
+                            + item["type"]
+                            + "-server host "
+                            + item["hostname"]
+                        )
 
-    elif state == 'present':
-        if needs_update('hostname'):
-            commands.append('hostname %s' % want['hostname'])
+    elif state == "present":
+        if needs_update("hostname"):
+            commands.append("hostname %s" % want["hostname"])
 
-        if want['domain_search']:
-            adds, removes = diff_list(want['domain_search'], have['domain_search'])
+        if want["domain_search"]:
+            adds, removes = diff_list(
+                want["domain_search"], have["domain_search"]
+            )
             for item in removes:
-                commands.append('no ip dns domain-list %s' % item)
+                commands.append("no ip dns domain-list %s" % item)
             for item in adds:
-                commands.append('ip dns domain-list %s' % item)
+                commands.append("ip dns domain-list %s" % item)
 
-        if want['name_servers']:
-            adds, removes = diff_list(want['name_servers'], have['name_servers'])
+        if want["name_servers"]:
+            adds, removes = diff_list(
+                want["name_servers"], have["name_servers"]
+            )
             for item in removes:
-                commands.append('no ip dns server-address %s' % item)
+                commands.append("no ip dns server-address %s" % item)
             for item in adds:
-                commands.append('ip dns server-address %s' % item)
+                commands.append("ip dns server-address %s" % item)
 
-        if want['aaa_servers']:
+        if want["aaa_servers"]:
             want_servers = []
-            want_server = want['aaa_servers']
-            have_server = have['aaa_servers']
+            want_server = want["aaa_servers"]
+            have_server = have["aaa_servers"]
             want_list = deepcopy(want_server)
             for items in want_list:
-                items['auth_key'] = None
+                items["auth_key"] = None
                 want_servers.append(items)
 
             adds, removes = diff_list(want_servers, have_server)
 
             for item in removes:
-                ip6addr = validate_ip_v6_address(item['hostname'])
+                ip6addr = validate_ip_v6_address(item["hostname"])
                 if ip6addr:
-                    cmd = 'no ' + item['type'] + '-server host ipv6 ' + item['hostname']
+                    cmd = (
+                        "no "
+                        + item["type"]
+                        + "-server host ipv6 "
+                        + item["hostname"]
+                    )
                 else:
-                    cmd = 'no ' + item['type'] + '-server host ' + item['hostname']
+                    cmd = (
+                        "no "
+                        + item["type"]
+                        + "-server host "
+                        + item["hostname"]
+                    )
                 commands.append(cmd)
 
             for w_item in adds:
                 for item in want_server:
-                    if item['hostname'] == w_item['hostname'] and item['type'] == w_item['type']:
-                        auth_key = item['auth_key']
+                    if (
+                        item["hostname"] == w_item["hostname"]
+                        and item["type"] == w_item["type"]
+                    ):
+                        auth_key = item["auth_key"]
 
-                ip6addr = validate_ip_v6_address(w_item['hostname'])
+                ip6addr = validate_ip_v6_address(w_item["hostname"])
                 if ip6addr:
-                    cmd = w_item['type'] + '-server host ipv6 ' + w_item['hostname']
+                    cmd = (
+                        w_item["type"]
+                        + "-server host ipv6 "
+                        + w_item["hostname"]
+                    )
                 else:
-                    cmd = w_item['type'] + '-server host ' + w_item['hostname']
-                if w_item['auth_port_type']:
-                    cmd += ' ' + w_item['auth_port_type'] + ' ' + w_item['auth_port_num']
-                if w_item['acct_port_num'] and w_item['type'] == 'radius':
-                    cmd += ' acct-port ' + w_item['acct_port_num']
-                if w_item['type'] == 'tacacs':
-                    if any((w_item['acct_port_num'], w_item['auth_key_type'])):
-                        module.fail_json(msg='acct_port and auth_key_type is not applicable for tacacs server')
-                if w_item['acct_type']:
-                    cmd += ' ' + w_item['acct_type']
+                    cmd = w_item["type"] + "-server host " + w_item["hostname"]
+                if w_item["auth_port_type"]:
+                    cmd += (
+                        " "
+                        + w_item["auth_port_type"]
+                        + " "
+                        + w_item["auth_port_num"]
+                    )
+                if w_item["acct_port_num"] and w_item["type"] == "radius":
+                    cmd += " acct-port " + w_item["acct_port_num"]
+                if w_item["type"] == "tacacs":
+                    if any((w_item["acct_port_num"], w_item["auth_key_type"])):
+                        module.fail_json(
+                            msg="acct_port and auth_key_type is not applicable for tacacs server"
+                        )
+                if w_item["acct_type"]:
+                    cmd += " " + w_item["acct_type"]
                 if auth_key is not None:
-                    cmd += ' key ' + auth_key
-                if w_item['auth_key_type'] and w_item['type'] == 'radius':
-                    val = ''
-                    for y in w_item['auth_key_type']:
-                        val = val + ' ' + y
+                    cmd += " key " + auth_key
+                if w_item["auth_key_type"] and w_item["type"] == "radius":
+                    val = ""
+                    for y in w_item["auth_key_type"]:
+                        val = val + " " + y
                     cmd += val
                 commands.append(cmd)
 
@@ -301,13 +366,13 @@ def map_obj_to_commands(want, have, module):
 
 
 def parse_hostname(config):
-    match = re.search(r'^hostname (\S+)', config, re.M)
+    match = re.search(r"^hostname (\S+)", config, re.M)
     if match:
         return match.group(1)
 
 
 def parse_domain_search(config):
-    match = re.findall(r'^ip dns domain[- ]list (\S+)', config, re.M)
+    match = re.findall(r"^ip dns domain[- ]list (\S+)", config, re.M)
     matches = list()
     for name in match:
         matches.append(name)
@@ -317,12 +382,12 @@ def parse_domain_search(config):
 def parse_name_servers(config):
     matches = list()
     values = list()
-    lines = config.split('\n')
+    lines = config.split("\n")
     for line in lines:
-        if 'ip dns server-address' in line:
-            values = line.split(' ')
+        if "ip dns server-address" in line:
+            values = line.split(" ")
             for val in values:
-                match = re.search(r'([0-9.]+)', val)
+                match = re.search(r"([0-9.]+)", val)
                 if match:
                     matches.append(match.group())
 
@@ -330,129 +395,148 @@ def parse_name_servers(config):
 
 
 def parse_aaa_servers(config):
-    configlines = config.split('\n')
+    configlines = config.split("\n")
     obj = []
     for line in configlines:
         auth_key_type = []
-        if 'radius-server' in line or 'tacacs-server' in line:
-            aaa_type = 'radius' if 'radius-server' in line else 'tacacs'
-            match = re.search(r'(host ipv6 (\S+))|(host (\S+))', line)
+        if "radius-server" in line or "tacacs-server" in line:
+            aaa_type = "radius" if "radius-server" in line else "tacacs"
+            match = re.search(r"(host ipv6 (\S+))|(host (\S+))", line)
             if match:
-                hostname = match.group(2) if match.group(2) is not None else match.group(4)
-            match = re.search(r'auth-port ([0-9]+)', line)
+                hostname = (
+                    match.group(2)
+                    if match.group(2) is not None
+                    else match.group(4)
+                )
+            match = re.search(r"auth-port ([0-9]+)", line)
             if match:
                 auth_port_num = match.group(1)
             else:
                 auth_port_num = None
-            match = re.search(r'acct-port ([0-9]+)', line)
+            match = re.search(r"acct-port ([0-9]+)", line)
             if match:
                 acct_port_num = match.group(1)
             else:
                 acct_port_num = None
-            match = re.search(r'acct-port [0-9]+ (\S+)', line)
+            match = re.search(r"acct-port [0-9]+ (\S+)", line)
             if match:
                 acct_type = match.group(1)
             else:
                 acct_type = None
-            if aaa_type == 'tacacs':
-                match = re.search(r'auth-port [0-9]+ (\S+)', line)
+            if aaa_type == "tacacs":
+                match = re.search(r"auth-port [0-9]+ (\S+)", line)
                 if match:
                     acct_type = match.group(1)
                 else:
                     acct_type = None
-            match = re.search(r'(dot1x)', line)
+            match = re.search(r"(dot1x)", line)
             if match:
-                auth_key_type.append('dot1x')
-            match = re.search(r'(mac-auth)', line)
+                auth_key_type.append("dot1x")
+            match = re.search(r"(mac-auth)", line)
             if match:
-                auth_key_type.append('mac-auth')
-            match = re.search(r'(web-auth)', line)
+                auth_key_type.append("mac-auth")
+            match = re.search(r"(web-auth)", line)
             if match:
-                auth_key_type.append('web-auth')
+                auth_key_type.append("web-auth")
 
-            obj.append({
-                'type': aaa_type,
-                'hostname': hostname,
-                'auth_port_type': 'auth-port',
-                'auth_port_num': auth_port_num,
-                'acct_port_num': acct_port_num,
-                'acct_type': acct_type,
-                'auth_key': None,
-                'auth_key_type': set(auth_key_type) if len(auth_key_type) > 0 else None
-            })
+            obj.append(
+                {
+                    "type": aaa_type,
+                    "hostname": hostname,
+                    "auth_port_type": "auth-port",
+                    "auth_port_num": auth_port_num,
+                    "acct_port_num": acct_port_num,
+                    "acct_type": acct_type,
+                    "auth_key": None,
+                    "auth_key_type": (
+                        set(auth_key_type) if len(auth_key_type) > 0 else None
+                    ),
+                }
+            )
 
     return obj
 
 
 def map_config_to_obj(module):
-    compare = module.params['check_running_config']
+    compare = module.params["check_running_config"]
     config = get_config(module, None, compare=compare)
     return {
-        'hostname': parse_hostname(config),
-        'domain_search': parse_domain_search(config),
-        'name_servers': parse_name_servers(config),
-        'aaa_servers': parse_aaa_servers(config)
+        "hostname": parse_hostname(config),
+        "domain_search": parse_domain_search(config),
+        "name_servers": parse_name_servers(config),
+        "aaa_servers": parse_aaa_servers(config),
     }
 
 
 def map_params_to_obj(module):
-    if module.params['aaa_servers']:
-        for item in module.params['aaa_servers']:
-            if item['auth_key_type']:
-                item['auth_key_type'] = set(item['auth_key_type'])
+    if module.params["aaa_servers"]:
+        for item in module.params["aaa_servers"]:
+            if item["auth_key_type"]:
+                item["auth_key_type"] = set(item["auth_key_type"])
     obj = {
-        'hostname': module.params['hostname'],
-        'domain_name': module.params['domain_name'],
-        'domain_search': module.params['domain_search'],
-        'name_servers': module.params['name_servers'],
-        'state': module.params['state'],
-        'aaa_servers': module.params['aaa_servers']
+        "hostname": module.params["hostname"],
+        "domain_name": module.params["domain_name"],
+        "domain_search": module.params["domain_search"],
+        "name_servers": module.params["name_servers"],
+        "state": module.params["state"],
+        "aaa_servers": module.params["aaa_servers"],
     }
     return obj
 
 
 def main():
-    """ Main entry point for Ansible module execution
-    """
+    """Main entry point for Ansible module execution"""
     server_spec = dict(
-        type=dict(choices=['radius', 'tacacs']),
+        type=dict(choices=["radius", "tacacs"]),
         hostname=dict(),
-        auth_port_type=dict(choices=['auth-port']),
+        auth_port_type=dict(choices=["auth-port"]),
         auth_port_num=dict(),
         acct_port_num=dict(),
-        acct_type=dict(choices=['accounting-only', 'authentication-only', 'authorization-only', 'default']),
+        acct_type=dict(
+            choices=[
+                "accounting-only",
+                "authentication-only",
+                "authorization-only",
+                "default",
+            ]
+        ),
         auth_key=dict(no_log=True),
-        auth_key_type=dict(type='list', choices=['dot1x', 'mac-auth', 'web-auth'])
+        auth_key_type=dict(
+            type="list", choices=["dot1x", "mac-auth", "web-auth"]
+        ),
     )
     argument_spec = dict(
         hostname=dict(),
-
-        domain_name=dict(type='list'),
-        domain_search=dict(type='list'),
-        name_servers=dict(type='list'),
-
-        aaa_servers=dict(type='list', elements='dict', options=server_spec),
-        state=dict(choices=['present', 'absent'], default='present'),
-        check_running_config=dict(default=False, type='bool', fallback=(env_fallback, ['ANSIBLE_CHECK_ICX_RUNNING_CONFIG']))
+        domain_name=dict(type="list"),
+        domain_search=dict(type="list"),
+        name_servers=dict(type="list"),
+        aaa_servers=dict(type="list", elements="dict", options=server_spec),
+        state=dict(choices=["present", "absent"], default="present"),
+        check_running_config=dict(
+            default=False,
+            type="bool",
+            fallback=(env_fallback, ["ANSIBLE_CHECK_ICX_RUNNING_CONFIG"]),
+        ),
     )
 
-    module = AnsibleModule(argument_spec=argument_spec,
-                           supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
+    )
 
-    result = {'changed': False}
+    result = {"changed": False}
 
     warnings = list()
 
-    result['warnings'] = warnings
+    result["warnings"] = warnings
     want = map_params_to_obj(module)
     have = map_config_to_obj(module)
     commands = map_obj_to_commands(want, have, module)
-    result['commands'] = commands
+    result["commands"] = commands
 
     if commands:
         if not module.check_mode:
             load_config(module, commands)
-        result['changed'] = True
+        result["changed"] = True
 
     module.exit_json(**result)
 

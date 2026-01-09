@@ -1,5 +1,5 @@
-GigabitEthernet1/1/1 is down, line protocol is down 
-  Port down for 2 day(s) 23 hour(s) 4 minute(s) 18 second(s) 
+GigabitEthernet1/1/1 is down, line protocol is down
+  Port down for 2 day(s) 23 hour(s) 4 minute(s) 18 second(s)
   Hardware is GigabitEthernet, address is 609c.9fe7.d600 (bia 609c.9fe7.d600)
   Configured speed 10Mbit, actual unknown, configured duplex fdx, actual unknown
   Configured mdi mode AUTO, actual unknown
@@ -29,7 +29,7 @@ GigabitEthernet1/1/1 is down, line protocol is down
   Protected: No
   MAC Port Security: Disabled
 
- This port is not being monitored for queue drops 
+ This port is not being monitored for queue drops
 Egress queues:
 Queue counters	  Queued packets	Dropped Packets
          0                   0                   0
@@ -41,8 +41,8 @@ Queue counters	  Queued packets	Dropped Packets
          6                   0                   0
          7                   0                   0
 
-GigabitEthernet1/1/2 is down, line protocol is down 
-  Port down for 2 day(s) 23 hour(s) 4 minute(s) 18 second(s) 
+GigabitEthernet1/1/2 is down, line protocol is down
+  Port down for 2 day(s) 23 hour(s) 4 minute(s) 18 second(s)
   Hardware is GigabitEthernet, address is 609c.9fe7.d601 (bia 609c.9fe7.d601)
   Configured speed auto, actual unknown, configured duplex fdx, actual unknown
   Configured mdi mode AUTO, actual unknown
@@ -72,7 +72,7 @@ GigabitEthernet1/1/2 is down, line protocol is down
   Protected: No
   MAC Port Security: Disabled
 
- This port is not being monitored for queue drops 
+ This port is not being monitored for queue drops
 Egress queues:
 Queue counters	  Queued packets	Dropped Packets
          0                   0                   0

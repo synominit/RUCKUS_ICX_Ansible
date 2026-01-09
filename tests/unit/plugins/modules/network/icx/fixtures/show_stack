@@ -1,0 +1,10 @@
+T=1d23h43m10.7: alone: standalone, D: dynamic cfg, S: static
+ID   Type          Role    Mac Address    Pri State   Comment
+1  S ICX6610-24    alone   cc4e.243c.8000 128 local   None:0
+2  S ICX6610-24    member  0000.0000.0000   0 reserve
+
+
+     +---+
+  2/1| 1 |2/6
+     +---+
+Current stack management MAC is cc4e.243c.8000

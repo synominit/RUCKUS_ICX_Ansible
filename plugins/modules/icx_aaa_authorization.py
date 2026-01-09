@@ -3,6 +3,7 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
@@ -104,10 +105,14 @@ EXAMPLES = """
 
 from ansible.module_utils.basic import AnsibleModule, env_fallback
 from ansible.module_utils.connection import ConnectionError, exec_command
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import load_config
+from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+    load_config,
+)
 
 
-def build_command(module, coa_enable=None, coa_ignore=None, commands=None, exec_=None):
+def build_command(
+    module, coa_enable=None, coa_ignore=None, commands=None, exec_=None
+):
     """
     Function to build the command to send to the terminal for the switch
     to execute. All args come from the module's unique params.
@@ -115,104 +120,134 @@ def build_command(module, coa_enable=None, coa_ignore=None, commands=None, exec_
     cmds = []
 
     if coa_enable is not None:
-        if coa_enable == 'absent':
+        if coa_enable == "absent":
             cmd = "no aaa authorization coa enable"
         else:
             cmd = "aaa authorization coa enable"
         cmds.append(cmd)
 
     if coa_ignore is not None:
-        if coa_ignore['state'] == 'absent':
-            cmd = "no aaa authorization coa ignore " + " ".join(coa_ignore['request'])
+        if coa_ignore["state"] == "absent":
+            cmd = "no aaa authorization coa ignore " + " ".join(
+                coa_ignore["request"]
+            )
         else:
-            cmd = "aaa authorization coa ignore " + " ".join(coa_ignore['request'])
+            cmd = "aaa authorization coa ignore " + " ".join(
+                coa_ignore["request"]
+            )
         cmds.append(cmd)
 
     if commands is not None:
-        if commands['state'] == 'absent':
-            cmd = "no aaa authorization commands {0} default".format(commands['privilege_level'])
+        if commands["state"] == "absent":
+            cmd = "no aaa authorization commands {0} default".format(
+                commands["privilege_level"]
+            )
         else:
-            cmd = "aaa authorization commands {0} default".format(commands['privilege_level'])
+            cmd = "aaa authorization commands {0} default".format(
+                commands["privilege_level"]
+            )
 
-        if commands['primary_method'] is not None:
-            cmd += " {0}".format(commands['primary_method'])
-            if commands['backup_method1'] is not None:
-                cmd += " {0}".format(commands['backup_method1'])
-                if commands['backup_method2'] is not None:
-                    cmd += " {0}".format(commands['backup_method2'])
+        if commands["primary_method"] is not None:
+            cmd += " {0}".format(commands["primary_method"])
+            if commands["backup_method1"] is not None:
+                cmd += " {0}".format(commands["backup_method1"])
+                if commands["backup_method2"] is not None:
+                    cmd += " {0}".format(commands["backup_method2"])
         cmds.append(cmd)
 
     if exec_ is not None:
-        if exec_['state'] == 'absent':
+        if exec_["state"] == "absent":
             cmd = "no aaa authorization exec default"
         else:
             cmd = "aaa authorization exec default"
 
-        if exec_['primary_method'] is not None:
-            cmd += " {0}".format(exec_['primary_method'])
-            if exec_['backup_method1'] is not None:
-                cmd += " {0}".format(exec_['backup_method1'])
-                if exec_['backup_method2'] is not None:
-                    cmd += " {0}".format(exec_['backup_method2'])
+        if exec_["primary_method"] is not None:
+            cmd += " {0}".format(exec_["primary_method"])
+            if exec_["backup_method1"] is not None:
+                cmd += " {0}".format(exec_["backup_method1"])
+                if exec_["backup_method2"] is not None:
+                    cmd += " {0}".format(exec_["backup_method2"])
         cmds.append(cmd)
 
     return cmds
 
 
 def main():
-    """entry point for module execution
-    """
+    """entry point for module execution"""
 
     coa_ignore_spec = dict(
-        state=dict(type='str', default='present', choices=['present', 'absent']),
-        request=dict(type='list', elements='str', required=True, choices=['disable-port', 'dm-request', 'flip-port', 'modify-acl', 'reauth-host'])
+        state=dict(
+            type="str", default="present", choices=["present", "absent"]
+        ),
+        request=dict(
+            type="list",
+            elements="str",
+            required=True,
+            choices=[
+                "disable-port",
+                "dm-request",
+                "flip-port",
+                "modify-acl",
+                "reauth-host",
+            ],
+        ),
     )
     commands_spec = dict(
-        privilege_level=dict(type='int', required=True, choices=[0, 4, 5]),
-        primary_method=dict(type='str', required=True, choices=['radius', 'tacacs+', 'none']),
-        backup_method1=dict(type='str', choices=['radius', 'tacacs+', 'none']),
-        backup_method2=dict(type='str', choices=['none']),
-        state=dict(type='str', default='present', choices=['present', 'absent'])
+        privilege_level=dict(type="int", required=True, choices=[0, 4, 5]),
+        primary_method=dict(
+            type="str", required=True, choices=["radius", "tacacs+", "none"]
+        ),
+        backup_method1=dict(type="str", choices=["radius", "tacacs+", "none"]),
+        backup_method2=dict(type="str", choices=["none"]),
+        state=dict(
+            type="str", default="present", choices=["present", "absent"]
+        ),
     )
     exec_spec = dict(
-        primary_method=dict(type='str', required=True, choices=['radius', 'tacacs+', 'none']),
-        backup_method1=dict(type='str', choices=['radius', 'tacacs+', 'none']),
-        backup_method2=dict(type='str', choices=['none']),
-        state=dict(type='str', default='present', choices=['present', 'absent'])
+        primary_method=dict(
+            type="str", required=True, choices=["radius", "tacacs+", "none"]
+        ),
+        backup_method1=dict(type="str", choices=["radius", "tacacs+", "none"]),
+        backup_method2=dict(type="str", choices=["none"]),
+        state=dict(
+            type="str", default="present", choices=["present", "absent"]
+        ),
     )
     argument_spec = dict(
-        coa_ignore=dict(type='dict', options=coa_ignore_spec),
-        coa_enable=dict(type='str', choices=['present', 'absent']),
-        commands=dict(type='dict', options=commands_spec),
-        exec_=dict(type='dict', options=exec_spec)
+        coa_ignore=dict(type="dict", options=coa_ignore_spec),
+        coa_enable=dict(type="str", choices=["present", "absent"]),
+        commands=dict(type="dict", options=commands_spec),
+        exec_=dict(type="dict", options=exec_spec),
     )
 
-    required_one_of = [['coa_enable', 'coa_ignore', 'commands', 'exec_']]
-    module = AnsibleModule(argument_spec=argument_spec,
-                           required_one_of=required_one_of,
-                           supports_check_mode=True)
+    required_one_of = [["coa_enable", "coa_ignore", "commands", "exec_"]]
+    module = AnsibleModule(
+        argument_spec=argument_spec,
+        required_one_of=required_one_of,
+        supports_check_mode=True,
+    )
 
     warnings = list()
-    results = {'changed': False}
+    results = {"changed": False}
     coa_enable = module.params["coa_enable"]
     coa_ignore = module.params["coa_ignore"]
     commands = module.params["commands"]
     exec_ = module.params["exec_"]
 
     if warnings:
-        results['warnings'] = warnings
+        results["warnings"] = warnings
 
     commands = build_command(module, coa_enable, coa_ignore, commands, exec_)
-    results['commands'] = commands
+    results["commands"] = commands
 
     if commands:
         if not module.check_mode:
             response = load_config(module, commands)
 
-        results['changed'] = True
+        results["changed"] = True
 
     module.exit_json(**results)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

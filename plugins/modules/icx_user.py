@@ -3,10 +3,11 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: icx_user
 author: "Ruckus Wireless (@Commscope)"
@@ -133,7 +134,7 @@ options:
        Module will use environment variable value(default:False), unless it is overridden, by specifying it as module parameter.
     type: bool
     default: no
-'''
+"""
 
 EXAMPLES = """
 - name: Create a new user without password
@@ -167,19 +168,22 @@ commands:
     - username ansible enable
 """
 
-from copy import deepcopy
-
-import re
 import base64
 import hashlib
-
+import re
+from copy import deepcopy
 from functools import partial
 
 from ansible.module_utils.basic import AnsibleModule, env_fallback
-from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import remove_default_spec
 from ansible.module_utils.connection import exec_command
 from ansible.module_utils.six import iteritems
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import get_config, load_config
+from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import (
+    remove_default_spec,
+)
+from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+    get_config,
+    load_config,
+)
 
 
 def get_param_value(key, item, module):
@@ -187,12 +191,12 @@ def get_param_value(key, item, module):
         value = module.params[key]
 
     else:
-        value_type = module.argument_spec[key].get('type', 'str')
+        value_type = module.argument_spec[key].get("type", "str")
         type_checker = module._CHECK_ARGUMENT_TYPES_DISPATCHER[value_type]
         type_checker(item[key])
         value = item[key]
 
-    validator = globals().get('validate_%s' % key)
+    validator = globals().get("validate_%s" % key)
     if all((value, validator)):
         validator(value, module)
 
@@ -200,21 +204,21 @@ def get_param_value(key, item, module):
 
 
 def map_params_to_obj(module):
-    users = module.params['aggregate']
+    users = module.params["aggregate"]
     if not users:
-        if not module.params['name'] and module.params['purge']:
+        if not module.params["name"] and module.params["purge"]:
             return list()
-        elif not module.params['name']:
-            module.fail_json(msg='username is required')
+        elif not module.params["name"]:
+            module.fail_json(msg="username is required")
         else:
-            aggregate = [{'name': module.params['name']}]
+            aggregate = [{"name": module.params["name"]}]
     else:
         aggregate = list()
         for item in users:
             if not isinstance(item, dict):
-                aggregate.append({'name': item})
-            elif 'name' not in item:
-                module.fail_json(msg='name is required')
+                aggregate.append({"name": item})
+            elif "name" not in item:
+                module.fail_json(msg="name is required")
             else:
                 aggregate.append(item)
 
@@ -222,41 +226,41 @@ def map_params_to_obj(module):
 
     for item in aggregate:
         get_value = partial(get_param_value, item=item, module=module)
-        item['configured_password'] = get_value('configured_password')
-        item['nopassword'] = get_value('nopassword')
-        item['privilege'] = get_value('privilege')
-        item['state'] = get_value('state')
+        item["configured_password"] = get_value("configured_password")
+        item["nopassword"] = get_value("nopassword")
+        item["privilege"] = get_value("privilege")
+        item["state"] = get_value("state")
         objects.append(item)
 
     return objects
 
 
 def parse_privilege(data):
-    match = re.search(r'privilege (\S)', data, re.M)
+    match = re.search(r"privilege (\S)", data, re.M)
     if match:
         return match.group(1)
 
 
 def map_config_to_obj(module):
     # compare = module.params['check_running_config']
-    data = get_config(module, flags=['| include username'])
+    data = get_config(module, flags=["| include username"])
 
-    match = re.findall(r'(?:^(?:u|\s{2}u))sername (\S+)', data, re.M)
+    match = re.findall(r"(?:^(?:u|\s{2}u))sername (\S+)", data, re.M)
     if not match:
         return list()
 
     instances = list()
 
     for user in set(match):
-        regex = r'username %s .+$' % user
+        regex = r"username %s .+$" % user
         cfg = re.findall(regex, data, re.M)
-        cfg = '\n'.join(cfg)
+        cfg = "\n".join(cfg)
         obj = {
-            'name': user,
-            'state': 'present',
-            'nopassword': 'nopassword' in cfg,
-            'configured_password': None,
-            'privilege': parse_privilege(cfg)
+            "name": user,
+            "state": "present",
+            "nopassword": "nopassword" in cfg,
+            "configured_password": None,
+            "privilege": parse_privilege(cfg),
         }
         instances.append(obj)
 
@@ -265,36 +269,53 @@ def map_config_to_obj(module):
 
 def map_obj_to_commands(updates, module):
     commands = list()
-    state = module.params['state']
-    update_password = module.params['update_password']
+    state = module.params["state"]
+    update_password = module.params["update_password"]
 
     def needs_update(want, have, x):
         return want.get(x) and (want.get(x) != have.get(x))
 
     def add(command, want, x):
-        command.append('username %s %s' % (want['name'], x))
+        command.append("username %s %s" % (want["name"], x))
+
     for update in updates:
         want, have = update
-        if want['state'] == 'absent':
-            commands.append(user_del_cmd(want['name']))
+        if want["state"] == "absent":
+            commands.append(user_del_cmd(want["name"]))
 
-        if needs_update(want, have, 'privilege'):
-            add(commands, want, 'privilege %s password %s' % (want['privilege'], want['configured_password']))
+        if needs_update(want, have, "privilege"):
+            add(
+                commands,
+                want,
+                "privilege %s password %s"
+                % (want["privilege"], want["configured_password"]),
+            )
         else:
-            if needs_update(want, have, 'configured_password'):
-                if update_password == 'always' or not have:
-                    add(commands, want, '%spassword %s' % ('privilege ' + str(have.get('privilege')) +
-                                                           " " if have.get('privilege') is not None else '', want['configured_password']))
+            if needs_update(want, have, "configured_password"):
+                if update_password == "always" or not have:  # nosec B105
+                    add(
+                        commands,
+                        want,
+                        "%spassword %s"
+                        % (
+                            (
+                                "privilege " + str(have.get("privilege")) + " "
+                                if have.get("privilege") is not None
+                                else ""
+                            ),
+                            want["configured_password"],
+                        ),
+                    )
 
-        if needs_update(want, have, 'nopassword'):
-            if want['nopassword']:
-                add(commands, want, 'nopassword')
+        if needs_update(want, have, "nopassword"):
+            if want["nopassword"]:
+                add(commands, want, "nopassword")
 
-        if needs_update(want, have, 'access_time'):
-            add(commands, want, 'access-time %s' % want['access_time'])
+        if needs_update(want, have, "access_time"):
+            add(commands, want, "access-time %s" % want["access_time"])
 
-        if needs_update(want, have, 'expiry_days'):
-            add(commands, want, 'expires %s' % want['expiry_days'])
+        if needs_update(want, have, "expiry_days"):
+            add(commands, want, "expires %s" % want["expiry_days"])
 
     return commands
 
@@ -302,19 +323,19 @@ def map_obj_to_commands(updates, module):
 def update_objects(want, have):
     updates = list()
     for entry in want:
-        item = next((i for i in have if i['name'] == entry['name']), None)
+        item = next((i for i in have if i["name"] == entry["name"]), None)
 
-        if all((item is None, entry['state'] == 'present')):
+        if all((item is None, entry["state"] == "present")):
             updates.append((entry, {}))
 
-        elif all((have == [], entry['state'] == 'absent')):
+        elif all((have == [], entry["state"] == "absent")):
             for key, value in iteritems(entry):
-                if key not in ['update_password']:
+                if key not in ["update_password"]:
                     updates.append((entry, item))
                     break
         elif item:
             for key, value in iteritems(entry):
-                if key not in ['update_password']:
+                if key not in ["update_password"]:
                     if value is not None and value != item.get(key):
                         updates.append((entry, item))
                         break
@@ -322,58 +343,69 @@ def update_objects(want, have):
 
 
 def user_del_cmd(username):
-    return 'no username %s' % username
+    return "no username %s" % username
 
 
 def main():
-    """entry point for module execution
-    """
+    """entry point for module execution"""
     element_spec = dict(
         name=dict(),
-
         configured_password=dict(no_log=True),
-        nopassword=dict(type='bool', default=False),
-        update_password=dict(default='always', choices=['on_create', 'always']),
-        privilege=dict(type='str', choices=['0', '4', '5']),
-        access_time=dict(type='str'),
-        state=dict(default='present', choices=['present', 'absent']),
-        check_running_config=dict(default=False, type='bool', fallback=(env_fallback, ['ANSIBLE_CHECK_ICX_RUNNING_CONFIG']))
+        nopassword=dict(type="bool", default=False),
+        update_password=dict(
+            default="always", choices=["on_create", "always"]
+        ),
+        privilege=dict(type="str", choices=["0", "4", "5"]),
+        access_time=dict(type="str"),
+        state=dict(default="present", choices=["present", "absent"]),
+        check_running_config=dict(
+            default=False,
+            type="bool",
+            fallback=(env_fallback, ["ANSIBLE_CHECK_ICX_RUNNING_CONFIG"]),
+        ),
     )
     aggregate_spec = deepcopy(element_spec)
-    aggregate_spec['name'] = dict(required=True)
+    aggregate_spec["name"] = dict(required=True)
 
     remove_default_spec(aggregate_spec)
 
     argument_spec = dict(
-        aggregate=dict(type='list', elements='dict', options=aggregate_spec, aliases=['users', 'collection']),
-        purge=dict(type='bool', default=False)
+        aggregate=dict(
+            type="list",
+            elements="dict",
+            options=aggregate_spec,
+            aliases=["users", "collection"],
+        ),
+        purge=dict(type="bool", default=False),
     )
 
     argument_spec.update(element_spec)
 
-    mutually_exclusive = [('name', 'aggregate')]
+    mutually_exclusive = [("name", "aggregate")]
 
-    module = AnsibleModule(argument_spec=argument_spec,
-                           mutually_exclusive=mutually_exclusive,
-                           supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec,
+        mutually_exclusive=mutually_exclusive,
+        supports_check_mode=True,
+    )
 
-    result = {'changed': False}
+    result = {"changed": False}
     want = map_params_to_obj(module)
 
-    if module.params['check_running_config'] is False:
+    if module.params["check_running_config"] is False:
         have = []
     else:
         have = map_config_to_obj(module)
 
     commands = map_obj_to_commands(update_objects(want, have), module)
 
-    if module.params['purge']:
-        want_users = [x['name'] for x in want]
-        if module.params['check_running_config'] is False:
+    if module.params["purge"]:
+        want_users = [x["name"] for x in want]
+        if module.params["check_running_config"] is False:
             have = map_config_to_obj(module)
-        have_users = [x['name'] for x in have]
+        have_users = [x["name"] for x in have]
         for item in set(have_users).difference(want_users):
-            if item != 'admin':
+            if item != "admin":
                 commands.append(user_del_cmd(item))
 
     result["commands"] = commands
@@ -381,9 +413,9 @@ def main():
     if commands:
         if not module.check_mode:
             load_config(module, commands)
-        result['changed'] = True
+        result["changed"] = True
     module.exit_json(**result)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
