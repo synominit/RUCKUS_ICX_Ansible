@@ -100,34 +100,34 @@ options:
 
 EXAMPLES = """
 - name: Configure host logging.
-  community.network.icx_logging:
+  synominit.icx.icx_logging:
     dest: host
     name: 172.16.0.1
     udp_port: 5555
 - name: Remove host logging configuration.
-  community.network.icx_logging:
+  synominit.icx.icx_logging:
     dest: host
     name: 172.16.0.1
     udp_port: 5555
     state: absent
 - name: Disables the real-time display of syslog messages.
-  community.network.icx_logging:
+  synominit.icx.icx_logging:
     dest: console
     state: absent
 - name: Enables local syslog logging.
-  community.network.icx_logging:
+  synominit.icx.icx_logging:
     dest : on
     state: present
 - name: Configure buffer level
-  community.network.icx_logging:
+  synominit.icx.icx_logging:
     dest: buffered
     level: critical
 - name: Configure logging using aggregate
-  community.network.icx_logging:
+  synominit.icx.icx_logging:
     aggregate:
       - { dest: buffered, level: ['notifications','errors'] }
 - name: Remove logging using aggregate
-  community.network.icx_logging:
+  synominit.icx.icx_logging:
     aggregate:
       - { dest: console }
       - { dest: host, name: 172.16.0.1, udp_port: 5555 }
@@ -157,7 +157,7 @@ from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.u
     remove_default_spec,
     validate_ip_v6_address,
 )
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+from ansible_collections.synominit.icx.plugins.module_utils.network.icx.icx import (
     get_config,
     load_config,
 )

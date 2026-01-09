@@ -6,9 +6,9 @@ __metaclass__ = type
 
 import json
 
-from ansible_collections.commscope.icx.plugins.modules import icx_command
-from ansible_collections.commscope.icx.tests.unit.compat.mock import patch
-from ansible_collections.commscope.icx.tests.unit.plugins.modules.utils import (
+from ansible_collections.synominit.icx.plugins.modules import icx_command
+from ansible_collections.synominit.icx.tests.unit.compat.mock import patch
+from ansible_collections.synominit.icx.tests.unit.plugins.modules.utils import (
     set_module_args,
 )
 
@@ -23,7 +23,7 @@ class TestICXCommandModule(TestICXModule):
         super(TestICXCommandModule, self).setUp()
 
         self.mock_run_commands = patch(
-            "ansible_collections.commscope.icx.plugins.modules.icx_command.run_commands"
+            "ansible_collections.synominit.icx.plugins.modules.icx_command.run_commands"
         )
         self.run_commands = self.mock_run_commands.start()
 

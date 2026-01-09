@@ -36,14 +36,14 @@ options:
 
 EXAMPLES = """
 - name: Collect all facts from the device
-  commscope.icx.icx_facts:
+  synominit.icx.icx_facts:
     gather_subset: all
 - name: Collect only the config and default facts
-  commscope.icx.icx_facts:
+  synominit.icx.icx_facts:
     gather_subset:
       - config
 - name: Do not collect hardware facts
-  commscope.icx.icx_facts:
+  synominit.icx.icx_facts:
     gather_subset:
       - "!hardware"
 """
@@ -129,7 +129,7 @@ import re
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.six import iteritems
 from ansible.module_utils.six.moves import zip
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+from ansible_collections.synominit.icx.plugins.module_utils.network.icx.icx import (
     run_commands,
 )
 

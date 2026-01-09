@@ -3,9 +3,9 @@
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
-from ansible_collections.commscope.icx.plugins.modules import icx_qos
-from ansible_collections.commscope.icx.tests.unit.compat.mock import patch
-from ansible_collections.commscope.icx.tests.unit.plugins.modules.utils import (
+from ansible_collections.synominit.icx.plugins.modules import icx_qos
+from ansible_collections.synominit.icx.tests.unit.compat.mock import patch
+from ansible_collections.synominit.icx.tests.unit.plugins.modules.utils import (
     set_module_args,
 )
 
@@ -19,16 +19,16 @@ class TestICXQosModule(TestICXModule):
     def setUp(self):
         super(TestICXQosModule, self).setUp()
         self.mock_exec_command = patch(
-            "ansible_collections.commscope.icx.plugins.modules.icx_qos.exec_command"
+            "ansible_collections.synominit.icx.plugins.modules.icx_qos.exec_command"
         )
         self.mock_run_commands = patch(
-            "ansible_collections.commscope.icx.plugins.modules.icx_qos.run_commands"
+            "ansible_collections.synominit.icx.plugins.modules.icx_qos.run_commands"
         )
         self.mock_get_config = patch(
-            "ansible_collections.commscope.icx.plugins.modules.icx_qos.get_config"
+            "ansible_collections.synominit.icx.plugins.modules.icx_qos.get_config"
         )
         self.mock_load_config = patch(
-            "ansible_collections.commscope.icx.plugins.modules.icx_qos.load_config"
+            "ansible_collections.synominit.icx.plugins.modules.icx_qos.load_config"
         )
         self.load_config = self.mock_load_config.start()
         self.get_config = self.mock_get_config.start()

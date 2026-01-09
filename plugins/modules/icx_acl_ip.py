@@ -279,7 +279,7 @@ options:
 """
 EXAMPLES = """
 - name: create ipv4 acl and add rules
-  community.network.icx_acl_ip:
+  synominit.icx.icx_acl_ip:
     acl_type: standard
     acl_name: acl1
     standard_rules:
@@ -288,7 +288,7 @@ EXAMPLES = """
         any: yes
         log: yes
 - name: create ipv4 acl and add rules
-  community.network.icx_acl_ip:
+  synominit.icx.icx_acl_ip:
     acl_type: extended
     acl_id: 112
     extended_rules:
@@ -302,7 +302,7 @@ EXAMPLES = """
         precedence: routine
         state: absent
 - name: remove ipv4 acl
-  community.network.icx_acl_ip:
+  synominit.icx.icx_acl_ip:
     acl_type: standard
     acl_name: acl1
     state: absent
@@ -310,7 +310,7 @@ EXAMPLES = """
 
 from ansible.module_utils.basic import AnsibleModule, env_fallback
 from ansible.module_utils.connection import ConnectionError, exec_command
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+from ansible_collections.synominit.icx.plugins.module_utils.network.icx.icx import (
     load_config,
 )
 

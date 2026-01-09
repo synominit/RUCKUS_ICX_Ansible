@@ -4,9 +4,9 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-from ansible_collections.commscope.icx.plugins.modules import icx_copy
-from ansible_collections.commscope.icx.tests.unit.compat.mock import patch
-from ansible_collections.commscope.icx.tests.unit.plugins.modules.utils import (
+from ansible_collections.synominit.icx.plugins.modules import icx_copy
+from ansible_collections.synominit.icx.tests.unit.compat.mock import patch
+from ansible_collections.synominit.icx.tests.unit.plugins.modules.utils import (
     set_module_args,
 )
 
@@ -20,15 +20,15 @@ class TestICXSCPModule(TestICXModule):
     def setUp(self):
         super(TestICXSCPModule, self).setUp()
         self.mock_exec_scp = patch(
-            "ansible_collections.commscope.icx.plugins.modules.icx_copy.exec_scp"
+            "ansible_collections.synominit.icx.plugins.modules.icx_copy.exec_scp"
         )
         self.mock_run_commands = patch(
-            "ansible_collections.commscope.icx.plugins.modules.icx_copy.run_commands"
+            "ansible_collections.synominit.icx.plugins.modules.icx_copy.run_commands"
         )
         self.exec_command = self.mock_exec_scp.start()
         self.run_commands = self.mock_run_commands.start()
         self.mock_exec_command = patch(
-            "ansible_collections.commscope.icx.plugins.modules.icx_copy.exec_command"
+            "ansible_collections.synominit.icx.plugins.modules.icx_copy.exec_command"
         )
         self.exec_commands = self.mock_exec_command.start()
 

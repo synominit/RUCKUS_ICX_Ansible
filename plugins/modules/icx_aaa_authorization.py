@@ -88,14 +88,14 @@ options:
 """
 EXAMPLES = """
 - name: configure aaa authorization coa_enable and coa_ignore
-  community.network.icx_aaa_authorization:
+  synominit.icx.icx_aaa_authorization:
     coa_enable:
       state: present
     coa_ignore:
       request: flip-port
       state: present
 - name: disable aaa authorization for commands
-  community.network.icx_aaa_authorization:
+  synominit.icx.icx_aaa_authorization:
     commands:
       privilege_level: 0
       primary_method: radius
@@ -105,7 +105,7 @@ EXAMPLES = """
 
 from ansible.module_utils.basic import AnsibleModule, env_fallback
 from ansible.module_utils.connection import ConnectionError, exec_command
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+from ansible_collections.synominit.icx.plugins.module_utils.network.icx.icx import (
     load_config,
 )
 

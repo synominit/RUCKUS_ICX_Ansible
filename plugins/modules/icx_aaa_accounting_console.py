@@ -136,7 +136,7 @@ options:
 """
 EXAMPLES = """
 - name: configure aaa accounting mac_auth and commands
-  community.network.icx_aaa_accounting_console:
+  synominit.icx.icx_aaa_accounting_console:
     mac_auth:
       primary_method: none
       state: present
@@ -146,7 +146,7 @@ EXAMPLES = """
       backup_method1: none
       state: present
 - name: disable aaa accounting for system
-  community.network.icx_aaa_accounting_console:
+  synominit.icx.icx_aaa_accounting_console:
     system:
       primary_method: tacacs+
       backup_method1: radius
@@ -156,7 +156,7 @@ EXAMPLES = """
 
 from ansible.module_utils.basic import AnsibleModule, env_fallback
 from ansible.module_utils.connection import ConnectionError, exec_command
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+from ansible_collections.synominit.icx.plugins.module_utils.network.icx.icx import (
     load_config,
 )
 

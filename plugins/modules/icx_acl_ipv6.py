@@ -189,7 +189,7 @@ options:
 """
 EXAMPLES = """
 - name: create ipv6 acl and add rules
-  community.network.icx_acl_ipv6:
+  synominit.icx.icx_acl_ipv6:
     acl_name: acl1
     rules: |
       - rule_type: permit
@@ -217,13 +217,13 @@ EXAMPLES = """
         state: absent
     state: present
 - name: remove ipv6 acl
-  community.network.icx_acl_ipv6:
+  synominit.icx.icx_acl_ipv6:
     acl_name: acl1
     state: absent
 """
 from ansible.module_utils.basic import AnsibleModule, env_fallback
 from ansible.module_utils.connection import ConnectionError, exec_command
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+from ansible_collections.synominit.icx.plugins.module_utils.network.icx.icx import (
     load_config,
 )
 

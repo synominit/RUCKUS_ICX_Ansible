@@ -1,6 +1,6 @@
 [project]
 name = "rukus-icx-ansible"
-version = "0.1.0"
+version = "2.0.0"
 description = "dependencies for developing/fixing ruckus icx modules"
 license = {text = "GPLv3"}
 readme = "README.md"

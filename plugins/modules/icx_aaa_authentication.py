@@ -132,7 +132,7 @@ options:
 """
 EXAMPLES = """
 - name: configure aaa authentication dot1x and enable
-  community.network.icx_aaa_authentication:
+  synominit.icx.icx_aaa_authentication:
     dot1x:
       primary_method: none
       state: present
@@ -143,7 +143,7 @@ EXAMPLES = """
         - line
       state: present
 - name: disable aaa authentication for web-server
-  community.network.icx_aaa_authentication:
+  synominit.icx.icx_aaa_authentication:
     web-server:
       primary_method: tacacs+
       backup_method_list:
@@ -153,7 +153,7 @@ EXAMPLES = """
 """
 from ansible.module_utils.basic import AnsibleModule, env_fallback
 from ansible.module_utils.connection import ConnectionError, exec_command
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+from ansible_collections.synominit.icx.plugins.module_utils.network.icx.icx import (
     load_config,
 )
 

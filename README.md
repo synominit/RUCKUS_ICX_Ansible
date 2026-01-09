@@ -3,6 +3,8 @@ The Ansible Commscope ICX collection includes a variety of Ansible content to he
 
 This collection has been tested against Commscope ICX version 08.0.95
 
+This is a foked and updated collection, since the original repo seems to have been abandoned, this collection will hold the latest updates & fixes.
+
 ## Ansible version compatability
 This collection has been tested against following Ansible versions: >=2.9.10.
 
@@ -17,44 +19,44 @@ The Commscope ICX collection supports network_cli connections.
 ### Cliconf plugins
 Name | Description
 --- | ---
-commscope.icx.icx|Use icx cliconf to run command on Commscope ICX platform
+synominit.icx.icx|Use icx cliconf to run command on Commscope ICX platform
 
 ### Modules
 Name | Description
 --- | ---
-commscope.icx.icx_banner|Manage multiline banners on Ruckus ICX 7K series switches
-commscope.icx.icx_command|Run arbitrary commands on remote Ruckus ICX 7K series switches
-commscope.icx.icx_config|Manage configuration sections of Ruckus ICX 7K series switches
-commscope.icx.icx_copy|Transfer files from or to remote Ruckus ICX 7K series switches
-commscope.icx.icx_facts|Collect facts from remote Ruckus ICX 7K series switches
-commscope.icx.icx_firmware_upgrade|Upgrades firmware of Ruckus ICX 7K series switches
-commscope.icx.icx_interface|Manage Interface on Ruckus ICX 7K series switches
-commscope.icx.icx_l3_interface|Manage Layer-3 interfaces on Ruckus ICX 7K series switches
-commscope.icx.icx_linkagg|Manage link aggregation groups on Ruckus ICX 7K series switches
-commscope.icx.icx_lldp|Manage LLDP configuration on Ruckus ICX 7K series switches
-commscope.icx.icx_logging|Manage logging on Ruckus ICX 7K series switches
-commscope.icx.icx_ping|Tests reachability using ping from Ruckus ICX 7K series switches
-commscope.icx.icx_qos|Configures qos features on ICX 7K series switches
-commscope.icx.icx_rate_limit|Configures rate limit on ICX 7K switch
-commscope.icx.icx_static_route|Manage static IP routes on Ruckus ICX 7K series switches
-commscope.icx.icx_static_route6|Manage static IPV6 routes on Ruckus ICX 7K series switches
-commscope.icx.icx_system|Manage the system attributes on Ruckus ICX 7K series switches
-commscope.icx.icx_user|Manage the user accounts on Ruckus ICX 7K series switches
-commscope.icx.icx_vlan|Manage VLANs on Ruckus ICX 7K series switches
+synominit.icx.icx_banner|Manage multiline banners on Ruckus ICX 7K series switches
+synominit.icx.icx_command|Run arbitrary commands on remote Ruckus ICX 7K series switches
+synominit.icx.icx_config|Manage configuration sections of Ruckus ICX 7K series switches
+synominit.icx.icx_copy|Transfer files from or to remote Ruckus ICX 7K series switches
+synominit.icx.icx_facts|Collect facts from remote Ruckus ICX 7K series switches
+synominit.icx.icx_firmware_upgrade|Upgrades firmware of Ruckus ICX 7K series switches
+synominit.icx.icx_interface|Manage Interface on Ruckus ICX 7K series switches
+synominit.icx.icx_l3_interface|Manage Layer-3 interfaces on Ruckus ICX 7K series switches
+synominit.icx.icx_linkagg|Manage link aggregation groups on Ruckus ICX 7K series switches
+synominit.icx.icx_lldp|Manage LLDP configuration on Ruckus ICX 7K series switches
+synominit.icx.icx_logging|Manage logging on Ruckus ICX 7K series switches
+synominit.icx.icx_ping|Tests reachability using ping from Ruckus ICX 7K series switches
+synominit.icx.icx_qos|Configures qos features on ICX 7K series switches
+synominit.icx.icx_rate_limit|Configures rate limit on ICX 7K switch
+synominit.icx.icx_static_route|Manage static IP routes on Ruckus ICX 7K series switches
+synominit.icx.icx_static_route6|Manage static IPV6 routes on Ruckus ICX 7K series switches
+synominit.icx.icx_system|Manage the system attributes on Ruckus ICX 7K series switches
+synominit.icx.icx_user|Manage the user accounts on Ruckus ICX 7K series switches
+synominit.icx.icx_vlan|Manage VLANs on Ruckus ICX 7K series switches
 
 <!--end collection content-->
 ## Installing this collection
 
 You can install the Commscope ICX collection with the Ansible Galaxy CLI:
 
-    ansible-galaxy collection install commscope.icx
+    ansible-galaxy collection install synominit.icx
 
 You can also include it in a `requirements.yml` file and install it with `ansible-galaxy collection install -r requirements.yml`, using the format:
 
 ```yaml
 ---
 collections:
-  - name: commscope.icx
+  - name: synominit.icx
 ```
 ## Using this collection
 
@@ -63,13 +65,13 @@ This collection includes [network resource modules](https://docs.ansible.com/ans
 
 ### Using modules from the Commscope ICX collection in your playbooks
 
-You can call modules by their Fully Qualified Collection Namespace (FQCN), such as `commscope.icx.icx_vlan`.
+You can call modules by their Fully Qualified Collection Namespace (FQCN), such as `synominit.icx.icx_vlan`.
 The following example task replaces configuration changes in the existing configuration on a RUCKUS ICX switch, using the FQCN:
 
 ```yaml
 ---
   - name: Add a single ethernet 1/1/48 as access(untagged) port to vlan 20
-    commscope.icx.icx_vlan:
+    synominit.icx.icx_vlan:
       name: test-vlan
       vlan_id: 20
       interfaces:
@@ -87,7 +89,7 @@ The following example task replaces configuration changes in the existing config
 
 ## Contributing to this collection
 
-If you find problems, please open an issue against the [Commscope ICX collection repository](https://github.com/commscope-ruckus/commscope.icx).
+If you find problems, please open an issue against the [Forked Commscope ICX collection repository](https://github.com/synominit/RUCKUS_ICX_Ansible).
 
 See the [Ansible Community Guide](https://docs.ansible.com/ansible/latest/community/index.html) for details on contributing to Ansible.
 

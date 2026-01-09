@@ -7,7 +7,7 @@ __metaclass__ = type
 import json
 import os
 
-from ansible_collections.commscope.icx.tests.unit.plugins.modules.utils import (
+from ansible_collections.synominit.icx.tests.unit.plugins.modules.utils import (
     AnsibleExitJson,
     AnsibleFailJson,
     ModuleTestCase,

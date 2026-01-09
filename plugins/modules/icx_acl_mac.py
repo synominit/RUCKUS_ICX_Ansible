@@ -89,7 +89,7 @@ options:
 """
 EXAMPLES = """
 - name: create mac acl and add rules
-  community.network.icx_acl_mac:
+  synominit.icx.icx_acl_mac:
     acl_name: mac123
     rule:
       - rule_type: permit
@@ -133,7 +133,7 @@ EXAMPLES = """
 """
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.connection import ConnectionError, exec_command
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+from ansible_collections.synominit.icx.plugins.module_utils.network.icx.icx import (
     load_config,
 )
 

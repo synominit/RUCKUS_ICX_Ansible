@@ -91,28 +91,28 @@ options:
 
 EXAMPLES = """
 - name: Create static link aggregation group
-  community.network.icx_linkagg:
+  synominit.icx.icx_linkagg:
     group: 10
     mode: static
     name: LAG1
 - name: Create link aggregation group with auto id
-  community.network.icx_linkagg:
+  synominit.icx.icx_linkagg:
     group: auto
     mode: dynamic
     name: LAG2
 - name: Delete link aggregation group
-  community.network.icx_linkagg:
+  synominit.icx.icx_linkagg:
     group: 10
     state: absent
 - name: Set members to LAG
-  community.network.icx_linkagg:
+  synominit.icx.icx_linkagg:
     group: 200
     mode: static
     members:
       - ethernet 1/1/1 to 1/1/6
       - ethernet 1/1/10
 - name: Remove links other then LAG id 100 and 3 using purge
-  community.network.icx_linkagg:
+  synominit.icx.icx_linkagg:
     aggregate:
       - { group: 3}
       - { group: 100}
@@ -144,7 +144,7 @@ from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.c
 from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import (
     remove_default_spec,
 )
-from ansible_collections.commscope.icx.plugins.module_utils.network.icx.icx import (
+from ansible_collections.synominit.icx.plugins.module_utils.network.icx.icx import (
     get_config,
     load_config,
     run_commands,
