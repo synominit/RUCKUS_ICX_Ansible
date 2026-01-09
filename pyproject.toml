@@ -1,6 +1,6 @@
 [project]
 name = "rukus-icx-ansible"
-version = "2.0.0"
+
 description = "dependencies for developing/fixing ruckus icx modules"
 license = {text = "GPLv3"}
 readme = "README.md"
@@ -12,6 +12,7 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
+version = "3.0.0"
 package-mode = false
 
 [dependency-groups]
