@@ -13,6 +13,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 package-mode = false
+
 [dependency-groups]
 dev = [
     "ansible (>=13.2.0,<14.0.0)",
@@ -23,6 +24,13 @@ dev = [
     "pyyaml (>=6.0.3,<7.0.0)",
     "pytest-cov (>=7.0.0,<8.0.0)"
 ]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_scheme = "pep440"
+version_provider = "poetry"
+update_changelog_on_bump = true
 
 
 [tool.bandit]
